@@ -1,3 +1,4 @@
+// Generated entry source: edit files in src/, then run `npm run build`.
 (function miniLyrics() {
     if (!window.Spicetify || !Spicetify.Player) {
         setTimeout(miniLyrics, 300);
@@ -5,7 +6,7 @@
     }
 
     console.log("[MiniLyrics] Extension loaded");
-    console.log("[MiniLyrics] Version: NetEase-TW-v18");
+    console.log("[MiniLyrics] Version: NetEase-TW-v19");
 
     // =========================================================
     // State
@@ -24,7 +25,8 @@
     let pipWindow = null;
     let pipDocument = null;
     let pipPollTimer = null;
-    let pipLyricsHidden = false;
+    let pipHoverTimer = null;
+    let pipHoverCleanup = null;
 
     let displayStatus = "Waiting for lyrics...";
 
@@ -35,6 +37,8 @@
 
     const PIP_ROOT_ID = "minilyrics-pip-root";
     const PIP_STYLE_ID = "minilyrics-pip-style";
+    const PIP_COLLAPSED_STORAGE_KEY =
+        "miniLyrics.pipCollapsed";
 
     // The NetEase APIs do not allow the Spotify webview to call them
     // directly because of CORS. Set this once in Spotify DevTools:
@@ -5205,7 +5209,7 @@
                 padding:
                     16px
                     16px
-                    82px;
+                    clamp(96px, 36vh, 128px);
 
                 pointer-events: none;
 
@@ -5220,7 +5224,7 @@
             .minilyrics-shell {
                 position: relative;
 
-                width: min(94vw, 760px);
+                width: min(88vw, 680px);
                 box-sizing: border-box;
 
                 pointer-events: none;
@@ -5230,18 +5234,13 @@
                     transform 180ms ease;
             }
 
-            #${PIP_ROOT_ID}.minilyrics-hidden
-            .minilyrics-shell {
-                opacity: 0;
-                transform: translateY(8px);
-            }
-
             #${PIP_ROOT_ID}
             .minilyrics-panel {
+                position: relative;
                 width: 100%;
                 box-sizing: border-box;
 
-                padding: 8px 14px;
+                padding: 5px 14px;
 
                 border-radius: 14px;
                 color: white;
@@ -5268,17 +5267,23 @@
                     0 1px 4px rgba(0,0,0,0.95);
 
                 overflow: hidden;
+
+                transition:
+                    width 200ms ease,
+                    height 200ms ease,
+                    padding 200ms ease,
+                    border-radius 200ms ease;
             }
 
             #${PIP_ROOT_ID}
-            .minilyrics-close {
+            .minilyrics-collapse {
                 position: absolute;
-                top: 0;
-                right: 0;
+                top: 1px;
+                right: 7px;
                 z-index: 100;
 
-                width: 25px;
-                height: 25px;
+                width: 32px;
+                height: 20px;
 
                 display: flex;
                 align-items: center;
@@ -5287,37 +5292,17 @@
                 padding: 0;
                 margin: 0;
 
-                border:
-                    1px solid rgba(255,255,255,0.14);
+                border: 0;
                 border-radius: 999px;
-
-                background:
-                    rgba(0,0,0,0.22);
-
-                backdrop-filter: blur(5px);
-                -webkit-backdrop-filter: blur(5px);
-
-                color:
-                    rgba(255,255,255,0.78);
-
-                font-family:
-                    Arial,
-                    sans-serif;
-                font-size: 18px;
-                font-weight: 300;
-                line-height: 1;
+                background: transparent;
 
                 cursor: pointer;
                 pointer-events: auto;
 
-                opacity: 0.62;
-
-                transform:
-                    translate(26%, -38%);
+                opacity: 0.58;
 
                 transition:
                     opacity 140ms ease,
-                    background 140ms ease,
                     transform 140ms ease;
 
                 -webkit-app-region:
@@ -5325,29 +5310,66 @@
             }
 
             #${PIP_ROOT_ID}
-            .minilyrics-close:hover {
+            .minilyrics-collapse span {
+                display: block;
+                width: 20px;
+                height: 2px;
+                border-radius: 999px;
+                background: rgba(255,255,255,0.82);
+                box-shadow: 0 1px 3px rgba(0,0,0,0.72);
+            }
+
+            #${PIP_ROOT_ID}
+            .minilyrics-collapse:hover {
                 opacity: 1;
-
-                background:
-                    rgba(0,0,0,0.42);
-
-                transform:
-                    translate(26%, -38%)
-                    scale(1.05);
+                transform: scaleX(1.12);
             }
 
             #${PIP_ROOT_ID}
-            .minilyrics-close:active {
-                transform:
-                    translate(26%, -38%)
-                    scale(0.94);
+            .minilyrics-collapse:active {
+                transform: scale(0.92);
             }
 
             #${PIP_ROOT_ID}
-            .minilyrics-close:focus-visible {
+            .minilyrics-collapse:focus-visible {
                 outline:
                     2px solid rgba(255,255,255,0.72);
                 outline-offset: 2px;
+            }
+
+            #${PIP_ROOT_ID}.minilyrics-collapsed
+            .minilyrics-shell {
+                width: 52px;
+            }
+
+            #${PIP_ROOT_ID}.minilyrics-collapsed
+            .minilyrics-panel {
+                width: 52px;
+                height: 24px;
+                padding: 0;
+                border-radius: 12px;
+            }
+
+            #${PIP_ROOT_ID}.minilyrics-collapsed
+            .minilyrics-collapse {
+                inset: 0;
+                width: 52px;
+                height: 24px;
+            }
+
+            #${PIP_ROOT_ID}.minilyrics-collapsed
+            .minilyrics-collapse span {
+                width: 24px;
+            }
+
+            #${PIP_ROOT_ID}.minilyrics-collapsed
+            .minilyrics-viewport {
+                display: none;
+            }
+
+            #${PIP_ROOT_ID}.minilyrics-peek-through
+            .minilyrics-shell {
+                opacity: 0.08;
             }
 
             /*
@@ -5361,7 +5383,7 @@
                 position: relative;
 
                 width: 100%;
-                height: 112px;
+                height: 84px;
 
                 overflow: hidden;
 
@@ -5458,7 +5480,7 @@
 
             #${PIP_ROOT_ID}
             .minilyrics-status {
-                min-height: 80px;
+                min-height: 54px;
 
                 display: flex;
                 justify-content: center;
@@ -5587,22 +5609,23 @@
             (min-aspect-ratio: 1/1) {
 
                 #${PIP_ROOT_ID} {
-                    padding-bottom: 66px;
+                    padding-bottom:
+                        clamp(92px, 34vh, 118px);
                 }
 
                 #${PIP_ROOT_ID}
                 .minilyrics-shell {
-                    width: min(90vw, 760px);
+                    width: min(84vw, 680px);
                 }
 
                 #${PIP_ROOT_ID}
                 .minilyrics-panel {
-                    padding: 7px 12px;
+                    padding: 4px 12px;
                 }
 
                 #${PIP_ROOT_ID}
                 .minilyrics-viewport {
-                    height: 108px;
+                    height: 80px;
                 }
 
                 #${PIP_ROOT_ID}
@@ -5633,6 +5656,7 @@
                     transform: none;
                     opacity: 0.65;
                 }
+
             }
         `;
 
@@ -5642,6 +5666,179 @@
     // =========================================================
     // PiP UI
     // =========================================================
+
+    function readPiPCollapsed() {
+        try {
+            return localStorage.getItem(
+                PIP_COLLAPSED_STORAGE_KEY
+            ) === "true";
+        } catch {
+            return false;
+        }
+    }
+
+    function setPiPCollapsed(
+        root,
+        collapsed,
+        persist = true
+    ) {
+        root.classList.toggle(
+            "minilyrics-collapsed",
+            collapsed
+        );
+
+        const button = root.querySelector(
+            ".minilyrics-collapse"
+        );
+
+        if (button) {
+            button.setAttribute(
+                "aria-expanded",
+                String(!collapsed)
+            );
+            button.setAttribute(
+                "aria-label",
+                collapsed
+                    ? "Expand lyrics"
+                    : "Collapse lyrics"
+            );
+            button.title = collapsed
+                ? "Expand lyrics"
+                : "Collapse lyrics";
+        }
+
+        if (!persist) {
+            return;
+        }
+
+        try {
+            localStorage.setItem(
+                PIP_COLLAPSED_STORAGE_KEY,
+                String(collapsed)
+            );
+        } catch {
+            // Storage failure should not affect the lyrics UI.
+        }
+    }
+
+    function resetLyricsHoverReveal(root) {
+        if (pipHoverTimer) {
+            clearTimeout(pipHoverTimer);
+            pipHoverTimer = null;
+        }
+
+        root?.classList.remove(
+            "minilyrics-peek-through"
+        );
+    }
+
+    function cleanupLyricsHoverReveal() {
+        if (pipHoverCleanup) {
+            pipHoverCleanup();
+            pipHoverCleanup = null;
+        }
+
+        if (pipHoverTimer) {
+            clearTimeout(pipHoverTimer);
+            pipHoverTimer = null;
+        }
+    }
+
+    function initLyricsHoverReveal(root, doc) {
+        cleanupLyricsHoverReveal();
+
+        let pointerInside = false;
+
+        const onPointerMove = event => {
+            const shell = root.querySelector(
+                ".minilyrics-shell"
+            );
+
+            if (
+                !shell ||
+                root.classList.contains(
+                    "minilyrics-collapsed"
+                )
+            ) {
+                pointerInside = false;
+                resetLyricsHoverReveal(root);
+                return;
+            }
+
+            const rect =
+                shell.getBoundingClientRect();
+
+            const inside =
+                event.clientX >= rect.left &&
+                event.clientX <= rect.right &&
+                event.clientY >= rect.top &&
+                event.clientY <= rect.bottom;
+
+            if (!inside) {
+                pointerInside = false;
+                resetLyricsHoverReveal(root);
+                return;
+            }
+
+            pointerInside = true;
+
+            if (
+                pipHoverTimer ||
+                root.classList.contains(
+                    "minilyrics-peek-through"
+                )
+            ) {
+                return;
+            }
+
+            pipHoverTimer = setTimeout(
+                () => {
+                    pipHoverTimer = null;
+
+                    if (
+                        pointerInside &&
+                        root.isConnected &&
+                        !root.classList.contains(
+                            "minilyrics-collapsed"
+                        )
+                    ) {
+                        root.classList.add(
+                            "minilyrics-peek-through"
+                        );
+                    }
+                },
+                2000
+            );
+        };
+
+        const onPointerLeave = () => {
+            pointerInside = false;
+            resetLyricsHoverReveal(root);
+        };
+
+        doc.addEventListener(
+            "pointermove",
+            onPointerMove,
+            { passive: true }
+        );
+
+        doc.addEventListener(
+            "pointerleave",
+            onPointerLeave
+        );
+
+        pipHoverCleanup = () => {
+            doc.removeEventListener(
+                "pointermove",
+                onPointerMove
+            );
+            doc.removeEventListener(
+                "pointerleave",
+                onPointerLeave
+            );
+            resetLyricsHoverReveal(root);
+        };
+    }
 
     function createPiPUI(doc) {
         injectPiPStyles(doc);
@@ -5664,11 +5861,12 @@
         root.innerHTML = `
             <div class="minilyrics-shell">
                 <button
-                    class="minilyrics-close"
+                    class="minilyrics-collapse"
                     type="button"
-                    aria-label="Hide lyrics"
-                    title="Hide lyrics">
-                    ×
+                    aria-label="Collapse lyrics"
+                    aria-expanded="true"
+                    title="Collapse lyrics">
+                    <span></span>
                 </button>
 
                 <div class="minilyrics-panel">
@@ -5679,40 +5877,51 @@
             </div>
         `;
 
-        const closeButton =
+        const collapseButton =
             root.querySelector(
-                ".minilyrics-close"
+                ".minilyrics-collapse"
             );
 
-        closeButton?.addEventListener(
+        collapseButton?.addEventListener(
             "click",
             event => {
                 event.preventDefault();
                 event.stopPropagation();
 
-                pipLyricsHidden = true;
+                const collapse =
+                    !root.classList.contains(
+                        "minilyrics-collapsed"
+                    );
 
-                root.classList.add(
-                    "minilyrics-hidden"
-                );
+                resetLyricsHoverReveal(root);
+                setPiPCollapsed(root, collapse);
 
-                console.log(
-                    "[MiniLyrics] Lyrics overlay hidden"
-                );
+                if (
+                    !collapse &&
+                    lyricLines.length
+                ) {
+                    lastRenderedPiPIndex = null;
 
-                setTimeout(
-                    () => {
-                        if (pipLyricsHidden) {
-                            root.style.display =
-                                "none";
-                        }
-                    },
-                    190
-                );
+                    requestAnimationFrame(
+                        () => renderPiPLyrics(
+                            currentLineIndex
+                        )
+                    );
+                } else if (!collapse) {
+                    renderPiPStatus(displayStatus);
+                }
             }
         );
 
         doc.body.appendChild(root);
+
+        setPiPCollapsed(
+            root,
+            readPiPCollapsed(),
+            false
+        );
+
+        initLyricsHoverReveal(root, doc);
 
         return root;
     }
@@ -5731,6 +5940,15 @@
             createPiPUI(
                 pipDocument
             );
+
+        if (
+            root.classList.contains(
+                "minilyrics-collapsed"
+            )
+        ) {
+            lastRenderedPiPIndex = null;
+            return;
+        }
 
         const panel =
             root.querySelector(
@@ -5912,7 +6130,7 @@
          * 位置由元素的 offsetHeight 決定，
          * 不再假設每一句只有單行。
          */
-        const GAP = 10;
+        const GAP = 6;
         const positions =
             new Map();
 
@@ -6028,7 +6246,7 @@
             previous
                 ? Math.min(
                     previous.offsetHeight,
-                    34
+                    22
                 )
                 : 0;
 
@@ -6036,18 +6254,18 @@
             next
                 ? Math.min(
                     next.offsetHeight,
-                    34
+                    22
                 )
                 : 0;
 
         const viewportHeight =
             Math.max(
-                112,
+                84,
                 Math.ceil(
                     currentHeight +
                     contextAbove +
                     contextBelow +
-                    28
+                    16
                 )
             );
 
@@ -6273,6 +6491,15 @@
                 pipDocument
             );
 
+        if (
+            root.classList.contains(
+                "minilyrics-collapsed"
+            )
+        ) {
+            lastRenderedPiPIndex = null;
+            return;
+        }
+
         const panel =
             root.querySelector(
                 ".minilyrics-panel"
@@ -6465,9 +6692,9 @@
     // =========================================================
 
     function cleanupPiP() {
+        cleanupLyricsHoverReveal();
         pipWindow = null;
         pipDocument = null;
-        pipLyricsHidden = false;
         lastRenderedPiPIndex = null;
     }
 
@@ -6482,7 +6709,6 @@
 
         pipWindow = win;
         pipDocument = win.document;
-        pipLyricsHidden = false;
 
         console.log(
             "[MiniLyrics] Attached to Spotify Mini Player"
@@ -6636,7 +6862,6 @@
         // 如果我們的元素被移掉，
         // 就自動補回去。
         if (
-            !pipLyricsHidden &&
             pipDocument?.body &&
             !pipDocument.getElementById(
                 PIP_ROOT_ID

@@ -1,5 +1,5 @@
 /**
- * Cloudflare Worker CORS proxy for Spotify-Mini-player-Lyrics v18.
+ * Cloudflare Worker CORS proxy for Spotify-Mini-player-Lyrics v19.
  *
  * Incoming requests stay GET-only. For NetEase search endpoints the Worker
  * first tries upstream GET. If NetEase returns HTTP 200 but zero songs, it

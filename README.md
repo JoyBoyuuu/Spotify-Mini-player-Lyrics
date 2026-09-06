@@ -1,28 +1,28 @@
-# Spotify-Mini-player-Lyrics
+# Spotify Mini Player Lyrics
 
-Synchronized lyrics and optional Traditional Chinese translations directly inside Spotify's native Mini Player.
+Synchronized lyrics and optional Traditional Chinese translations directly
+inside Spotify's native Picture-in-Picture Mini Player.
 
-**Spotify-Mini-player-Lyrics** is a lightweight [Spicetify](https://spicetify.app/) extension that retrieves synchronized lyrics from [LRCLIB](https://lrclib.net/) and displays them inside Spotify's native Picture-in-Picture Mini Player. When available, existing Chinese translations are retrieved from NetEase Cloud Music and converted to Traditional Chinese with OpenCC.
+This lightweight [Spicetify](https://spicetify.app/) extension retrieves synced
+lyrics from [LRCLIB](https://lrclib.net/), follows Spotify's playback position,
+and renders the current lyrics over the native Mini Player.
 
 ## Features
 
-- Synchronized lyrics inside Spotify's native Mini Player
-- Smooth vertical lyric scrolling animations
-- Previous, current, and next lyric display
-- Multi-line lyrics with automatic wrapping
-- Seek-aware lyric synchronization
-- Automatic lyric lookup when changing tracks
+- Synchronized lyrics in Spotify's native Mini Player
 - LRCLIB exact lookup with search fallback
-- Optional Traditional Chinese translations from NetEase Cloud Music
-- Simplified Chinese to Traditional Chinese conversion with OpenCC
-- Mixed-language lyric handling
-- Korean, Japanese, and Spanish translation support when a matching NetEase translation is available
-- Romanized Korean lyric detection and native-script replacement when possible
-- Pure English lines are kept in English instead of being translated unnecessarily
-- Translation is shown only for the current lyric line to keep the Mini Player uncluttered
-- More transparent subtitle background for a less intrusive overlay
-- Top-right `×` button to hide the lyric overlay without closing Spotify's Mini Player
-- No separate lyrics window required
+- Smooth previous/current/next lyric scrolling
+- Full multi-line lyrics without ellipsis truncation
+- Seek-aware synchronization and automatic song-change loading
+- Responsive compact overlay positioned above the playback timeline
+- Traditional Chinese translations from available NetEase lyric data
+- Simplified-to-Traditional Chinese conversion with OpenCC
+- Background translation loading without delaying the original lyrics
+- Korean, Japanese, Spanish, and mixed-language lyric handling
+- Romanized Korean detection and native-script replacement when reliable
+- Persistent collapse control inside the lyrics panel
+- Two-second pointer-hover fade so covered playback controls remain visible
+- Animated searching status
 
 ## Requirements
 
@@ -30,72 +30,84 @@ Synchronized lyrics and optional Traditional Chinese translations directly insid
 - [Spicetify](https://spicetify.app/)
 - Windows
 
-Traditional Chinese translation support additionally requires a small CORS proxy. A ready-to-deploy Cloudflare Worker script is included in this repository as `netease-cors-worker.js`.
+Original synchronized lyrics work without additional configuration. Traditional
+Chinese translations additionally require the optional CORS proxy described
+below.
 
 ## Installation
 
-### 1. Download the extension
+1. Download `miniLyrics.js` from this repository.
+2. Copy it to:
 
-Download `miniLyrics.js` from this repository:
+   ```text
+   %APPDATA%\spicetify\Extensions\miniLyrics.js
+   ```
 
-[Spotify-Mini-player-Lyrics](https://github.com/JoyBoyuuu/Spotify-Mini-player-Lyrics)
+3. Enable and apply the extension in PowerShell:
 
-### 2. Copy the extension
+   ```powershell
+   spicetify config extensions miniLyrics.js
+   spicetify apply
+   ```
 
-Place `miniLyrics.js` in your Spicetify Extensions directory:
+4. Play a song and open Spotify's native Mini Player.
 
-```text
-%APPDATA%\spicetify\Extensions\
-```
-
-For example:
-
-```text
-C:\Users\<YourUsername>\AppData\Roaming\spicetify\Extensions\miniLyrics.js
-```
-
-### 3. Enable the extension
-
-Open PowerShell and run:
+Spicetify appends extension names instead of replacing older entries. If an old
+version such as `miniLyricsV18.js` is enabled, remove it before enabling the
+current filename:
 
 ```powershell
+spicetify config extensions miniLyricsV18.js-
 spicetify config extensions miniLyrics.js
 spicetify apply
 ```
 
-Spotify will restart automatically.
+Check the active filename with:
 
-### 4. Open the Mini Player
+```powershell
+spicetify config extensions
+```
 
-Start playing a song and open Spotify's native Mini Player.
+## Updating
 
-If synchronized lyrics are available, they will appear automatically.
+From this repository directory, rebuild, copy, and apply the latest version:
 
-At this point, synchronized original lyrics work without any additional translation setup.
+```powershell
+npm run verify
+Copy-Item ".\miniLyrics.js" "$env:APPDATA\spicetify\Extensions\miniLyrics.js" -Force
+spicetify apply
+```
 
-## Optional: Traditional Chinese Translation Setup
+Only the generated `miniLyrics.js` needs to be copied to Spicetify.
 
-Spotify's embedded browser cannot directly request NetEase lyric endpoints because of browser CORS restrictions. The repository therefore includes `netease-cors-worker.js`, which can be deployed as a small Cloudflare Worker proxy.
+## Mini Player controls
+
+- Click the short line in the top-right of the lyrics panel to collapse it.
+- Click the compact collapsed control to expand the lyrics again.
+- The collapsed state is saved across song changes and Mini Player sessions.
+- Keep the pointer over the lyrics for two seconds to fade the overlay and
+  reveal playback controls underneath it.
+- Move the pointer outside the lyrics panel to restore the overlay immediately.
+
+## Optional Traditional Chinese translations
+
+Spotify's embedded browser cannot call NetEase lyric endpoints directly because
+of CORS restrictions. The included `netease-cors-worker.js` is a restricted
+Cloudflare Worker that only accepts the NetEase host and lyric/search paths used
+by this extension.
 
 ### 1. Deploy the Worker
 
-Create a Cloudflare Worker, copy the contents of:
-
-```text
-netease-cors-worker.js
-```
-
-into the Worker, and deploy it.
-
-Your deployed address should look similar to:
+Create a Cloudflare Worker, copy the contents of `netease-cors-worker.js` into
+it, and deploy it. The resulting address should look like:
 
 ```text
 https://YOUR-WORKER.workers.dev/
 ```
 
-Do not use another user's Worker URL. Deploy your own instance.
+Use your own Worker deployment rather than another user's URL.
 
-### 2. Configure the extension
+### 2. Configure Spotify
 
 Open Spotify Developer Tools and run:
 
@@ -106,146 +118,108 @@ localStorage.setItem(
 );
 ```
 
-Then reload Spotify or run:
-
-```powershell
-spicetify apply
-```
-
-You can verify the setting in Spotify Developer Tools with:
+Reload Spotify or run `spicetify apply`. Verify the saved value with:
 
 ```javascript
-localStorage.getItem("miniLyrics.neteaseProxy")
+localStorage.getItem("miniLyrics.neteaseProxy");
 ```
 
 ### 3. Translation behavior
 
-When a translated lyric is available, the extension will:
+The extension keeps LRCLIB as the canonical synchronized timeline, searches
+NetEase asynchronously, aligns matching translated lines, and converts
+Simplified Chinese to Traditional Chinese with OpenCC. Only the current line
+shows its translation so the Mini Player remains readable.
 
-1. Keep LRCLIB as the canonical synchronized lyric timeline.
-2. Search NetEase Cloud Music for the matching song.
-3. Retrieve existing translated lyric data when available.
-4. Align the NetEase lyric lines with the LRCLIB timestamps.
-5. Convert Simplified Chinese to Traditional Chinese with OpenCC.
-6. Display the Traditional Chinese translation beneath the current lyric line.
+Translations may appear a few seconds after the original lyrics on first play.
+Song matches and translations are cached locally, so repeated playback is
+usually faster. When no sufficiently reliable match is found, the extension
+keeps the original lyrics rather than showing a likely incorrect translation.
 
-Translations may appear a few seconds after the original synchronized lyrics, especially the first time a song is played. This is expected because NetEase search, lyric matching, alignment, and Traditional Chinese conversion run asynchronously.
+## Language handling
 
-Previously matched songs and translations are cached locally, so repeated playback is usually faster.
+The matching logic supports mixed-language material such as Korean or Japanese
+lyrics containing English lines and Spanish lyrics with English phrases. Pure
+English lines are kept in English whenever they can be identified reliably.
 
-## Updating
+For Korean romanization, timed native Korean lyrics from NetEase can be used as
+alignment evidence. Romanized text is replaced with Hangul only when the match
+is sufficiently confident.
 
-Replace the existing:
+## Development
 
-```text
-%APPDATA%\spicetify\Extensions\miniLyrics.js
-```
+The maintainable source is split by responsibility under `src/`. Do not edit
+the generated root `miniLyrics.js` directly because the next build will replace
+those edits.
 
-with the latest version from this repository.
+Requirements:
 
-Then run:
+- Node.js
+- npm
+
+Build and validate:
 
 ```powershell
-spicetify apply
+npm run verify
 ```
 
-If the extension filename changes during local testing, disable the old version before enabling the new one.
+Build without the syntax check:
 
-## How It Works
+```powershell
+npm run build
+```
 
-The extension reads the currently playing track and playback position through Spicetify.
+`scripts/build.cjs` combines the ordered source files into the single shared
+script expected by Spicetify. When adding a source file, register it in the
+correct position in that build list.
 
-The synchronized lyric pipeline is:
-
-1. Detect the currently playing song.
-2. Retrieve synchronized lyrics from LRCLIB.
-3. Parse the LRC timestamps.
-4. Match Spotify's playback position to the corresponding lyric line.
-5. Inject the lyric overlay into Spotify's native Picture-in-Picture Mini Player.
-6. Update the displayed lyrics during playback.
-7. Re-synchronize immediately when seeking or changing tracks.
-
-If Traditional Chinese translation is enabled, a second asynchronous pipeline searches NetEase Cloud Music for translated lyric data and safely aligns it to the LRCLIB timeline.
-
-## Lyrics Display
-
-The Mini Player displays the surrounding lyrics with the current line emphasized.
+## Project structure
 
 ```text
-Previous lyric
-
-CURRENT LYRIC
-Traditional Chinese translation
-
-Next lyric
+src/                       Maintainable extension source
+scripts/build.cjs          Single-file build script
+miniLyrics.js              Generated Spicetify extension
+netease-cors-worker.js     Optional restricted NetEase CORS proxy
+package.json               Build and validation commands
 ```
-
-Only the current line displays its translation. Previous and next lines remain original-only so the Mini Player stays readable.
-
-When the song moves to the next line, the lyrics smoothly scroll upward instead of switching instantly.
-
-Long lyric lines are automatically wrapped instead of being truncated with `...`.
-
-The lyric panel uses a lightweight translucent background. Click the `×` button in the top-right corner of the lyric overlay to hide subtitles while keeping Spotify's Mini Player open. Closing and reopening the Mini Player restores the lyric overlay.
-
-## Language Handling
-
-The translation system is designed for mixed-language songs rather than blindly translating every Latin-script line.
-
-Examples include:
-
-- Korean lyrics mixed with English
-- Romanized Korean lyrics mixed with English
-- Japanese lyrics
-- Spanish lyrics
-- Songs where NetEase and LRCLIB split lyric lines differently
-
-Pure English lines are intentionally kept in English whenever they can be identified reliably.
-
-For Korean romanization, the extension can use NetEase's native Korean lyric timing as evidence and replace romanized text with Hangul when alignment is sufficiently confident.
-
-## Lyrics and Translation Sources
-
-Original synchronized lyrics are retrieved from [LRCLIB](https://lrclib.net/).
-
-Existing Chinese translations, when available, are retrieved from NetEase Cloud Music through the optional CORS proxy.
-
-Traditional Chinese conversion is performed with OpenCC.
-
-This project does not include or redistribute a bundled lyrics or translation database.
-
-Availability and synchronization accuracy depend on the data provided by the upstream lyric sources. Some songs may have synchronized lyrics but no translation, incomplete translations, or metadata that cannot be matched safely.
-
-When the extension cannot find a sufficiently reliable translation match, it prefers showing only the original lyrics rather than displaying an incorrect translation.
 
 ## Troubleshooting
 
-If original lyrics work but translations do not, check Spotify Developer Tools for MiniLyrics messages such as:
+### Changes do not appear
 
-```text
-[MiniLyrics] NetEase translation cache hit
-[MiniLyrics] NetEase match: ...
-[MiniLyrics] Added Traditional Chinese translations to ... lines
+Confirm that Spicetify is loading `miniLyrics.js`, not an older versioned file:
+
+```powershell
+spicetify config extensions
 ```
 
-Also verify that your proxy is configured:
+Then rebuild, copy, and run `spicetify apply` again. Avoid enabling two
+MiniLyrics files at the same time because both extensions will inject an
+overlay.
+
+### No synchronized lyrics
+
+The selected track may not have synchronized lyrics in LRCLIB. Availability and
+timing accuracy depend on the data returned by the provider.
+
+### No Traditional Chinese translation
+
+Confirm that the proxy setting is present and the Worker responds:
 
 ```javascript
-localStorage.getItem("miniLyrics.neteaseProxy")
+localStorage.getItem("miniLyrics.neteaseProxy");
 ```
 
-If it returns `null`, configure your Worker URL as described above.
+Some tracks do not have matching translated lyrics on NetEase. Original LRCLIB
+lyrics should continue working normally. Spotify `remote-config-resolver` and
+third-party Marketplace manifest errors are unrelated to MiniLyrics.
 
-Messages related to Spotify `remote-config-resolver` or third-party Spicetify Marketplace manifest errors are unrelated to MiniLyrics.
+## Lyrics sources and disclaimer
 
-## Repository
+This project does not bundle or redistribute a lyrics database. Lyrics are
+retrieved at runtime from LRCLIB and, when configured, NetEase. Availability and
+accuracy depend on upstream data.
 
-GitHub:
-
-[JoyBoyuuu/Spotify-Mini-player-Lyrics](https://github.com/JoyBoyuuu/Spotify-Mini-player-Lyrics)
-
-## Disclaimer
-
-Spotify-Mini-player-Lyrics is an unofficial community project.
-
-It is not affiliated with, endorsed by, or associated with Spotify, Spicetify, LRCLIB, NetEase Cloud Music, Cloudflare, or OpenCC.
+Spotify Mini Player Lyrics is an unofficial community project. It is not
+affiliated with, endorsed by, or associated with Spotify, Spicetify, LRCLIB,
+NetEase, Cloudflare, or OpenCC.

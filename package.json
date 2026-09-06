@@ -1,0 +1,9 @@
+{
+  "name": "spotify-mini-player-lyrics",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.cjs",
+    "check": "node --check miniLyrics.js",
+    "verify": "npm run build && npm run check"
+  }
+}
