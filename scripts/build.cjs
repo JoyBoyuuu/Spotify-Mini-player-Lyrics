@@ -23,6 +23,7 @@ const sourceFiles = [
     "translation-opencc.js",
     "translation-loader.js",
     "pip-styles.js",
+    "pip-empty-state.js",
     "pip-renderer.js",
     "pip-lifecycle.js",
     "lyrics-synchronizer.js",

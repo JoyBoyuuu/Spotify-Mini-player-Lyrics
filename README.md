@@ -209,6 +209,8 @@ If a brand-new Spotify version is not yet supported by Spicetify, you may need t
 
 # Mini Player controls
 
+Click the `譯` button at the top-left to toggle translations. It is brighter when enabled and dimmer when disabled. The choice is saved across songs and sessions; turning it off skips new translation lookups.
+
 - Click the short line in the top-right of the lyric panel to collapse it.
 - Click the compact collapsed control to expand the lyrics again.
 - The collapsed state is saved across song changes and Mini Player sessions.
@@ -614,6 +616,8 @@ Remove obsolete MiniLyrics entries and old JavaScript files from the Extensions 
 
 ## The Mini Player opens, but there are no synchronized lyrics
 
+When synchronized lyrics are missing or unusable, a centered casual message and a small monochrome pixel cat appear. The message stays stable until the song changes; the cat stays still when reduced motion is enabled. Missing translations alone do not replace available original lyrics with this empty state.
+
 Possible causes:
 
 1. The current track has no synchronized lyric entry in LRCLIB.
@@ -834,7 +838,9 @@ Do not post private account credentials, authentication tokens, or other secrets
 
 The matching logic supports mixed-language material such as Korean or Japanese lyrics containing English lines and Spanish lyrics with English phrases.
 
-Pure English lines are kept in English whenever they can be identified reliably.
+All non-Chinese lyrics, including English songs and foreign-language fragments in Chinese songs, are eligible for Traditional Chinese translation. Chinese-only lines are kept as-is (Japanese kanji lines use the track language as context).
+
+The provider's complete-line translation is preferred. When the provider splits a mixed line into fragments, available translations are joined in order and untranslated English fragments belonging to that line are preserved. Coverage still depends on NetEase; no machine-translation service is added.
 
 For Korean romanization, timed native Korean lyrics from NetEase can be used as alignment evidence. Romanized text is replaced with Hangul only when the match is sufficiently confident.
 

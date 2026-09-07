@@ -25,6 +25,7 @@
 
         currentTrack =
             track;
+        missingLyricsMessage = "";
 
         const myRequestId =
             ++requestId;
@@ -113,7 +114,7 @@
                     track
                 );
 
-            if (cachedTranslations) {
+            if (translationsEnabled && cachedTranslations) {
                 applyTranslationArray(
                     cachedTranslations
                 );
@@ -134,6 +135,7 @@
             return true;
 
         } catch (error) {
+            if (myRequestId !== requestId) return true;
             console.error(
                 "[MiniLyrics] Lyrics error:",
                 error

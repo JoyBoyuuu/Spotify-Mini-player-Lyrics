@@ -29,6 +29,12 @@
     let pipHoverCleanup = null;
 
     let displayStatus = "Waiting for lyrics...";
+    let translationsEnabled = true;
+    try {
+        translationsEnabled = localStorage.getItem("miniLyrics.translationsEnabled") !== "false";
+    } catch {
+        // Keep translations enabled when storage is unavailable.
+    }
 
     // NetEase translation state.
     let translationRequestId = 0;
@@ -44,7 +50,7 @@
     // directly because of CORS. Set this once in Spotify DevTools:
     // localStorage.setItem("miniLyrics.neteaseProxy", "https://YOUR-WORKER.workers.dev/?url=");
     const NETEASE_PROXY_STORAGE_KEY = "miniLyrics.neteaseProxy";
-    const NETEASE_TRANSLATION_CACHE_PREFIX = "miniLyrics.neteaseTranslation:v18:";
+    const NETEASE_TRANSLATION_CACHE_PREFIX = "miniLyrics.neteaseTranslation:v20:";
     const NETEASE_SONG_CACHE_PREFIX = "miniLyrics.neteaseSongMatch:v5:";
     const NETEASE_MIN_MATCH_SCORE = 58;
     const NETEASE_SEARCH_LIMIT = 50;

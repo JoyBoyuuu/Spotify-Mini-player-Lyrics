@@ -266,6 +266,7 @@
         track,
         parentRequestId
     ) {
+        if (!translationsEnabled) return;
         if (
             !shouldProbeNeteaseTranslation(
                 lyricLines
@@ -398,6 +399,8 @@
                     lrclibLanguage === "ko" ||
                     lrclibLanguage === "ja" ||
                     lrclibLanguage === "es" ||
+                    lrclibLanguage === "en" ||
+                    lrclibLanguage === "zh" ||
                     lrclibLanguage === "other"
                 )
             ) {
@@ -504,19 +507,10 @@
             }
 
             if (
-                neteaseOriginalLanguage === "en"
-            ) {
-                console.log(
-                    "[MiniLyrics] NetEase confirms English lyrics; Chinese translation skipped"
-                );
-                return;
-            }
-
-            if (
                 neteaseOriginalLanguage === "unknown"
             ) {
                 console.log(
-                    "[MiniLyrics] NetEase original lyric is unavailable; skipped to avoid translating a true English song"
+                    "[MiniLyrics] NetEase original lyric is unavailable; cannot align translations safely"
                 );
                 return;
             }

@@ -29,6 +29,12 @@
     let pipHoverCleanup = null;
 
     let displayStatus = "Waiting for lyrics...";
+    let translationsEnabled = true;
+    try {
+        translationsEnabled = localStorage.getItem("miniLyrics.translationsEnabled") !== "false";
+    } catch {
+        // Keep translations enabled when storage is unavailable.
+    }
 
     // NetEase translation state.
     let translationRequestId = 0;
@@ -44,7 +50,7 @@
     // directly because of CORS. Set this once in Spotify DevTools:
     // localStorage.setItem("miniLyrics.neteaseProxy", "https://YOUR-WORKER.workers.dev/?url=");
     const NETEASE_PROXY_STORAGE_KEY = "miniLyrics.neteaseProxy";
-    const NETEASE_TRANSLATION_CACHE_PREFIX = "miniLyrics.neteaseTranslation:v18:";
+    const NETEASE_TRANSLATION_CACHE_PREFIX = "miniLyrics.neteaseTranslation:v20:";
     const NETEASE_SONG_CACHE_PREFIX = "miniLyrics.neteaseSongMatch:v5:";
     const NETEASE_MIN_MATCH_SCORE = 58;
     const NETEASE_SEARCH_LIMIT = 50;
@@ -2186,10 +2192,7 @@
             language
         );
 
-        return (
-            language !== "zh" &&
-            language !== "unknown"
-        );
+        return lines.some(line => lineNeedsChineseTranslation(line.text, language));
     }
 
     function hasHangul(text) {
@@ -4049,384 +4052,49 @@
         );
     }
 
-    function lineNeedsChineseTranslation(
-        originalText,
-        trackLanguage
-    ) {
-        const text =
-            String(originalText || "")
-                .normalize("NFKC")
-                .trim();
-
-        if (!text) {
-            return false;
-        }
-
-        if (
-            hasHangul(text) ||
-            hasKana(text)
-        ) {
-            return true;
-        }
-
-        if (
-            trackLanguage === "ja" &&
-            hasHan(text)
-        ) {
-            return true;
-        }
-
-        if (
-            trackLanguage === "zh"
-        ) {
-            return false;
-        }
-
-        if (
-            trackLanguage === "romanized"
-        ) {
-            if (
-                looksLikeKoreanRomanizationLine(
-                    text
-                )
-            ) {
-                return true;
-            }
-
-            const words =
-                text
-                    .toLowerCase()
-                    .replace(/[^a-z']+/g, " ")
-                    .split(/\s+/)
-                    .filter(Boolean);
-
-            const strongEnglishWords =
-                new Set([
-                    "the", "and", "you", "your", "i", "me", "my",
-                    "we", "our", "they", "it", "this", "that",
-                    "is", "are", "was", "were", "be", "been",
-                    "to", "of", "in", "on", "for", "with", "at",
-                    "a", "an", "not", "don't", "dont", "can't",
-                    "cant", "i'm", "im", "it's", "its", "who's",
-                    "whos", "what", "when", "where", "why", "how",
-                    "look", "new", "switched", "up", "so", "fresh",
-                    "clean", "feel", "feeling", "right", "time",
-                    "never", "left", "show", "must", "go", "power",
-                    "baby", "yeah", "love", "know", "want", "just"
-                ]);
-
-            const recognized =
-                words.filter(
-                    word =>
-                        strongEnglishWords.has(
-                            word
-                        )
-                ).length;
-
-            const strongEnglish =
-                words.length >= 2 &&
-                (
-                    recognized ===
-                        words.length ||
-                    (
-                        words.length >= 4 &&
-                        recognized /
-                            words.length >=
-                            0.8
-                    )
-                );
-
-            return !strongEnglish;
-        }
-
-        if (
-            trackLanguage === "es"
-        ) {
-            return (
-                looksLikeSpanishLine(
-                    text
-                ) ||
-                !looksLikeStrongEnglishLine(
-                    text
-                )
-            );
-        }
-
-        if (
-            trackLanguage === "ko" ||
-            trackLanguage === "ja" ||
-            trackLanguage === "other"
-        ) {
-            return !looksLikeStrongEnglishLine(
-                text
-            );
-        }
-
-        return false;
+    // Han-only lines are kept as-is; any other letters are translation-eligible.
+    // Japanese kanji-only lines need the track's language as context.
+    function lineNeedsChineseTranslation(originalText, trackLanguage) {
+        const text = String(originalText || "").normalize("NFKC").trim();
+        if (trackLanguage === "ja" && hasHan(text)) return true;
+        return /\p{L}/u.test(text.replace(/\p{Script=Han}/gu, ""));
     }
 
-    function targetNeedsTranslation(
-        targetText,
-        neteaseLanguage
-    ) {
-        const text =
-            String(
-                targetText || ""
-            ).trim();
-
-        if (!text) {
-            return false;
-        }
-
-        if (
-            hasHangul(text) ||
-            hasKana(text)
-        ) {
-            return true;
-        }
-
-        if (
-            neteaseLanguage === "ko"
-        ) {
-            return (
-                looksLikeKoreanRomanizationLine(
-                    text
-                )
-            );
-        }
-
-        if (
-            neteaseLanguage === "romanized"
-        ) {
-            return (
-                looksLikeKoreanRomanizationLine(
-                    text
-                )
-            );
-        }
-
-        if (
-            neteaseLanguage === "ja"
-        ) {
-            return (
-                hasHan(text) ||
-                !looksPlainEnglishLine(text)
-            );
-        }
-
-        if (
-            neteaseLanguage === "es"
-        ) {
-            return (
-                looksLikeSpanishLine(
-                    text
-                ) ||
-                !looksLikeStrongEnglishLine(
-                    text
-                )
-            );
-        }
-
-        if (
-            neteaseLanguage === "other"
-        ) {
-            return !looksLikeStrongEnglishLine(
-                text
-            );
-        }
-
-        return false;
+    function targetNeedsTranslation(targetText, neteaseLanguage) {
+        return lineNeedsChineseTranslation(targetText, neteaseLanguage);
     }
 
-    function alignNeteaseToLrclib(
-        neteaseLines,
-        neteaseLanguage,
-        frozenOffsetMs = null
-    ) {
-        const translations =
-            lyricLines.map(() => "");
-
-        const usable =
-            (neteaseLines || [])
-                .filter(
-                    candidate =>
-                        candidate?.translation
-                )
-                .sort(
-                    (a, b) =>
-                        a.timeMs -
-                        b.timeMs
-                );
-
-        if (!usable.length) {
-            return translations;
-        }
-
-        const offsetMs =
-            Number.isFinite(
-                frozenOffsetMs
-            )
-                ? frozenOffsetMs
-                : estimateNeteaseTimeOffset(
-                    usable.filter(
-                        candidate =>
-                            candidate?.text
-                    )
-                );
-
-        const groups =
-            assignNeteaseLinesToLrclib(
-                usable,
-                offsetMs
-            );
-
-        const rebalance =
-            rebalanceMixedForeignGroups(
-                groups,
-                neteaseLanguage
-            );
-
-        let filled = 0;
-        let rescuedByAssignment = 0;
-        let protectedEnglish = 0;
-        let joinedFragments = 0;
-
-        for (
-            let i = 0;
-            i < lyricLines.length;
-            i++
-        ) {
-            const target =
-                lyricLines[i];
-
-            const group =
-                groups[i] || [];
-
-            if (!group.length) {
-                continue;
-            }
-
-            const foreignCandidates =
-                group.filter(
-                    candidate =>
-                        isNetEaseCandidateNativeForLanguage(
-                            candidate.text,
-                            neteaseLanguage
-                        )
-                );
-
-            if (!foreignCandidates.length) {
-                continue;
-            }
-
-            const obviousForeign =
-                targetNeedsTranslation(
-                    target.text,
-                    neteaseLanguage
-                );
-
-            const englishMatch =
-                getBestEnglishMatchScore(
-                    target.text,
-                    group
-                );
-
-            const assignmentRescue =
-                shouldTreatTargetAsForeignByAssignment(
-                    target,
-                    group,
-                    neteaseLanguage
-                );
-
-            if (
-                !obviousForeign &&
-                !assignmentRescue
-            ) {
-                if (englishMatch >= 0.62) {
-                    protectedEnglish++;
-                }
-
-                continue;
-            }
-
-            /*
-             * Only use translation attached to foreign/native NetEase source
-             * fragments. A neighbouring English line can sit in the same time
-             * region, but its Chinese translation must never be appended to a
-             * Korean/Japanese target.
-             */
+    function alignNeteaseToLrclib(neteaseLines, neteaseLanguage, frozenOffsetMs = null) {
+        const usable = (neteaseLines || []).filter(line => line?.text);
+        const offsetMs = Number.isFinite(frozenOffsetMs)
+            ? frozenOffsetMs : estimateNeteaseTimeOffset(usable);
+        const groups = assignNeteaseLinesToLrclib(usable, offsetMs);
+        return lyricLines.map((target, index) => {
+            if (!targetNeedsTranslation(target.text, neteaseLanguage)) return "";
+            const group = groups[index] || [];
+            // A provider's complete-line translation takes priority over fragments.
+            const exact = group.find(candidate =>
+                normalizeText(candidate.text) === normalizeText(target.text) &&
+                hasHan(candidate.translation));
+            if (exact) return exact.translation.trim();
+            if (!group.some(candidate => hasHan(candidate.translation))) return "";
             const pieces = [];
             const seen = new Set();
-
-            for (
-                const candidate of
-                foreignCandidates
-            ) {
-                const value =
-                    String(
-                        candidate.translation || ""
-                    ).trim();
-
-                if (!value) {
-                    continue;
-                }
-
-                const key =
-                    normalizeText(value);
-
-                if (
-                    !key ||
-                    seen.has(key)
-                ) {
-                    continue;
-                }
-
+            for (const candidate of group) {
+                const value = String(candidate.translation || (
+                    // Keep untranslated English/Chinese fragments only if they
+                    // actually occur in this target, not just a nearby timestamp.
+                    compactMatchText(target.text).includes(compactMatchText(candidate.text)) &&
+                    !hasHangul(candidate.text) && !hasKana(candidate.text)
+                        ? candidate.text : ""
+                )).trim();
+                const key = normalizeText(value);
+                if (!key || seen.has(key)) continue;
                 seen.add(key);
                 pieces.push(value);
             }
-
-            if (!pieces.length) {
-                continue;
-            }
-
-            translations[i] =
-                pieces.join(" ");
-
-            filled++;
-
-            if (
-                !obviousForeign &&
-                assignmentRescue
-            ) {
-                rescuedByAssignment++;
-            }
-
-            if (pieces.length > 1) {
-                joinedFragments++;
-            }
-        }
-
-        console.log(
-            "[MiniLyrics] Translation exclusive assignment:",
-            {
-                offsetMs,
-                total:
-                    filled,
-                lrclib:
-                    lyricLines.length,
-                netease:
-                    usable.length,
-                rescuedByAssignment,
-                protectedEnglish,
-                joinedFragments,
-                movedFromPrevious:
-                    rebalance.movedFromPrevious,
-                movedFromNext:
-                    rebalance.movedFromNext
-            }
-        );
-
-        return translations;
+            return pieces.join(" ");
+        });
     }
 
     async function ensureOpenCC() {
@@ -4833,6 +4501,7 @@
         track,
         parentRequestId
     ) {
+        if (!translationsEnabled) return;
         if (
             !shouldProbeNeteaseTranslation(
                 lyricLines
@@ -4965,6 +4634,8 @@
                     lrclibLanguage === "ko" ||
                     lrclibLanguage === "ja" ||
                     lrclibLanguage === "es" ||
+                    lrclibLanguage === "en" ||
+                    lrclibLanguage === "zh" ||
                     lrclibLanguage === "other"
                 )
             ) {
@@ -5071,19 +4742,10 @@
             }
 
             if (
-                neteaseOriginalLanguage === "en"
-            ) {
-                console.log(
-                    "[MiniLyrics] NetEase confirms English lyrics; Chinese translation skipped"
-                );
-                return;
-            }
-
-            if (
                 neteaseOriginalLanguage === "unknown"
             ) {
                 console.log(
-                    "[MiniLyrics] NetEase original lyric is unavailable; skipped to avoid translating a true English song"
+                    "[MiniLyrics] NetEase original lyric is unavailable; cannot align translations safely"
                 );
                 return;
             }
@@ -5278,7 +4940,7 @@
             #${PIP_ROOT_ID}
             .minilyrics-collapse {
                 position: absolute;
-                top: 1px;
+                top: 4px;
                 right: 7px;
                 z-index: 100;
 
@@ -5337,6 +4999,40 @@
                 outline-offset: 2px;
             }
 
+            #${PIP_ROOT_ID} .minilyrics-translation-toggle {
+                position: absolute;
+                left: 7px;
+                top: 4px;
+                z-index: 100;
+                width: 32px;
+                height: 20px;
+                padding: 0;
+                border: 0;
+                border-radius: 6px;
+                background: transparent;
+                box-shadow: none;
+                color: rgba(255,255,255,0.88);
+                font: 12px/20px Arial, sans-serif;
+                text-align: center;
+                cursor: pointer;
+                pointer-events: auto;
+                -webkit-app-region: no-drag;
+            }
+            #${PIP_ROOT_ID} .minilyrics-translation-toggle[aria-pressed="false"] {
+                opacity: 0.45;
+                text-decoration: line-through;
+            }
+            #${PIP_ROOT_ID} .minilyrics-translation-toggle:hover {
+                color: white;
+            }
+            #${PIP_ROOT_ID} .minilyrics-translation-toggle:focus-visible {
+                outline: 2px solid white;
+                outline-offset: 1px;
+            }
+            #${PIP_ROOT_ID}.minilyrics-collapsed .minilyrics-translation-toggle {
+                display: none;
+            }
+
             #${PIP_ROOT_ID}.minilyrics-collapsed
             .minilyrics-shell {
                 width: 52px;
@@ -5365,6 +5061,14 @@
             #${PIP_ROOT_ID}.minilyrics-collapsed
             .minilyrics-viewport {
                 display: none;
+            }
+
+            #${PIP_ROOT_ID}.minilyrics-measuring .minilyrics-shell,
+            #${PIP_ROOT_ID}.minilyrics-measuring .minilyrics-panel,
+            #${PIP_ROOT_ID}.minilyrics-measuring .minilyrics-viewport,
+            #${PIP_ROOT_ID}.minilyrics-measuring .minilyrics-line,
+            #${PIP_ROOT_ID}.minilyrics-measuring .minilyrics-translation {
+                transition: none !important;
             }
 
             #${PIP_ROOT_ID}.minilyrics-peek-through
@@ -5534,6 +5238,48 @@
             }
 
             /* Searching: three dots move like a small wave. */
+            #${PIP_ROOT_ID} .minilyrics-empty {
+                display: grid;
+                grid-template-columns: 58px minmax(0, 1fr) 58px;
+                gap: 8px;
+                padding: 12px 8px;
+            }
+            #${PIP_ROOT_ID} .minilyrics-empty::before { content: ''; }
+            #${PIP_ROOT_ID} .minilyrics-empty-text { min-width: 0; }
+            #${PIP_ROOT_ID} .minilyrics-cat-lane {
+                position: relative; width: 58px; height: 28px;
+                flex: 0 0 58px; overflow: hidden;
+            }
+            #${PIP_ROOT_ID} .minilyrics-empty-cat {
+                position: absolute; width: 24px; height: 24px; left: 0; bottom: 0;
+                animation: minilyrics-cat-roam 7.2s linear infinite;
+            }
+            #${PIP_ROOT_ID} .minilyrics-empty-cat span { position: absolute; display: block; }
+            #${PIP_ROOT_ID} .cat-body { left: 5px; top: 12px; width: 13px; height: 7px; background: currentColor; }
+            #${PIP_ROOT_ID} .cat-head {
+                left: 15px; top: 7px; width: 8px; height: 9px; background: currentColor;
+                box-shadow: -1px -3px 0 -1px currentColor, 1px -3px 0 -1px currentColor;
+            }
+            #${PIP_ROOT_ID} .cat-tail { left: 2px; top: 7px; width: 3px; height: 10px; background: currentColor; }
+            #${PIP_ROOT_ID} .cat-feet {
+                left: 6px; top: 19px; width: 3px; height: 3px;
+                background: currentColor; box-shadow: 9px 0 currentColor;
+                animation: minilyrics-cat-step 480ms steps(2, end) infinite;
+            }
+            @keyframes minilyrics-cat-step { to { transform: translateX(2px); } }
+            @keyframes minilyrics-cat-roam {
+                0% { transform: translateX(0) scaleX(1); }
+                49% { transform: translateX(32px) scaleX(1); }
+                50% { transform: translateX(32px) scaleX(-1); }
+                99% { transform: translateX(0) scaleX(-1); }
+                100% { transform: translateX(0) scaleX(1); }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                #${PIP_ROOT_ID} .minilyrics-empty-cat,
+                #${PIP_ROOT_ID} .cat-feet { animation: none; }
+            }
+
+            /* Searching: three dots move like a small wave. */
             #${PIP_ROOT_ID}
             .minilyrics-searching {
                 display: inline-flex;
@@ -5661,6 +5407,35 @@
         `;
 
         doc.head.appendChild(style);
+    }
+
+    // Original pixel cat drawn from integer-sized CSS blocks; no external asset.
+    const MISSING_LYRICS_MESSAGES = [
+        "Can't find the lyrics, take care of my cat instead.",
+        "Where did you even find this song?",
+        "Oops, these lyrics got away.",
+        "No lyrics here. Just vibes.",
+        "Can't find the words. Enjoy the music."
+    ];
+    let missingLyricsMessage = "";
+
+    function renderMissingLyrics(panel) {
+        if (!missingLyricsMessage) {
+            missingLyricsMessage = MISSING_LYRICS_MESSAGES[
+                Math.floor(Math.random() * MISSING_LYRICS_MESSAGES.length)
+            ];
+        }
+        panel.innerHTML = `
+            <div class="minilyrics-status minilyrics-empty">
+                <span class="minilyrics-empty-text"></span>
+                <span class="minilyrics-cat-lane" aria-hidden="true">
+                    <span class="minilyrics-empty-cat">
+                        <span class="cat-body"></span><span class="cat-head"></span>
+                        <span class="cat-tail"></span><span class="cat-feet"></span>
+                    </span>
+                </span>
+            </div>`;
+        panel.querySelector(".minilyrics-empty-text").textContent = missingLyricsMessage;
     }
 
     // =========================================================
@@ -5840,6 +5615,14 @@
         };
     }
 
+    function updateTranslationToggle(root) {
+        const button = root.querySelector(".minilyrics-translation-toggle");
+        if (!button) return;
+        button.setAttribute("aria-pressed", String(translationsEnabled));
+        button.title = translationsEnabled ? "關閉翻譯" : "開啟翻譯";
+        button.setAttribute("aria-label", button.title);
+    }
+
     function createPiPUI(doc) {
         injectPiPStyles(doc);
 
@@ -5874,6 +5657,11 @@
                         class="minilyrics-viewport">
                     </div>
                 </div>
+                <button
+                    class="minilyrics-translation-toggle"
+                    type="button"
+                    aria-label="關閉翻譯"
+                    aria-pressed="true">譯</button>
             </div>
         `;
 
@@ -5894,25 +5682,55 @@
                     );
 
                 resetLyricsHoverReveal(root);
-                setPiPCollapsed(root, collapse);
+                if (collapse) {
+                    setPiPCollapsed(root, true);
+                    return;
+                }
 
-                if (
-                    !collapse &&
-                    lyricLines.length
-                ) {
+                // Measure at the final expanded width, not partway through
+                // the panel's width/padding transition from the 52px capsule.
+                root.classList.add("minilyrics-measuring");
+                try {
+                    setPiPCollapsed(root, false);
+                    void root.offsetWidth;
                     lastRenderedPiPIndex = null;
-
-                    requestAnimationFrame(
-                        () => renderPiPLyrics(
-                            currentLineIndex
-                        )
-                    );
-                } else if (!collapse) {
-                    renderPiPStatus(displayStatus);
+                    if (lyricLines.length) {
+                        renderPiPLyrics(currentLineIndex);
+                    } else {
+                        renderPiPStatus(displayStatus);
+                    }
+                    // Commit the computed height before restoring transitions.
+                    void root.offsetHeight;
+                } finally {
+                    root.classList.remove("minilyrics-measuring");
                 }
             }
         );
 
+        root.querySelector(".minilyrics-translation-toggle").addEventListener("click", event => {
+            event.preventDefault();
+            event.stopPropagation();
+            translationsEnabled = !translationsEnabled;
+            // Discard results from any translation task started before this toggle.
+            ++translationRequestId;
+            try {
+                localStorage.setItem("miniLyrics.translationsEnabled", String(translationsEnabled));
+            } catch {}
+            resetLyricsHoverReveal(root);
+            updateTranslationToggle(root);
+            root.classList.add("minilyrics-measuring");
+            try {
+                lastRenderedPiPIndex = null;
+                renderPiPLyrics(currentLineIndex);
+                void root.offsetHeight;
+            } finally {
+                root.classList.remove("minilyrics-measuring");
+            }
+            if (translationsEnabled && currentTrack && lyricLines.length) {
+                loadNeteaseTranslation(currentTrack, requestId);
+            }
+        });
+        updateTranslationToggle(root);
         doc.body.appendChild(root);
 
         setPiPCollapsed(
@@ -5958,6 +5776,11 @@
         const isSearching =
             /^Searching(?::|\b)/i
                 .test(text);
+
+        if (text === "No synchronized lyrics" || text === "Unable to parse lyrics") {
+            renderMissingLyrics(panel);
+            return;
+        }
 
         if (isSearching) {
             panel.innerHTML = `
@@ -6316,7 +6139,7 @@
         node.textContent = value;
 
         const visible =
-            Boolean(value) && isCurrent;
+            translationsEnabled && Boolean(value) && isCurrent;
 
         /*
          * Do not use display:none. Keeping the node mounted makes PiP
@@ -6955,6 +6778,7 @@
 
         currentTrack =
             track;
+        missingLyricsMessage = "";
 
         const myRequestId =
             ++requestId;
@@ -7043,7 +6867,7 @@
                     track
                 );
 
-            if (cachedTranslations) {
+            if (translationsEnabled && cachedTranslations) {
                 applyTranslationArray(
                     cachedTranslations
                 );
@@ -7064,6 +6888,7 @@
             return true;
 
         } catch (error) {
+            if (myRequestId !== requestId) return true;
             console.error(
                 "[MiniLyrics] Lyrics error:",
                 error

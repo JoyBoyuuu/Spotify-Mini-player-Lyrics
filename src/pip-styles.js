@@ -101,7 +101,7 @@
             #${PIP_ROOT_ID}
             .minilyrics-collapse {
                 position: absolute;
-                top: 1px;
+                top: 4px;
                 right: 7px;
                 z-index: 100;
 
@@ -160,6 +160,40 @@
                 outline-offset: 2px;
             }
 
+            #${PIP_ROOT_ID} .minilyrics-translation-toggle {
+                position: absolute;
+                left: 7px;
+                top: 4px;
+                z-index: 100;
+                width: 32px;
+                height: 20px;
+                padding: 0;
+                border: 0;
+                border-radius: 6px;
+                background: transparent;
+                box-shadow: none;
+                color: rgba(255,255,255,0.88);
+                font: 12px/20px Arial, sans-serif;
+                text-align: center;
+                cursor: pointer;
+                pointer-events: auto;
+                -webkit-app-region: no-drag;
+            }
+            #${PIP_ROOT_ID} .minilyrics-translation-toggle[aria-pressed="false"] {
+                opacity: 0.45;
+                text-decoration: line-through;
+            }
+            #${PIP_ROOT_ID} .minilyrics-translation-toggle:hover {
+                color: white;
+            }
+            #${PIP_ROOT_ID} .minilyrics-translation-toggle:focus-visible {
+                outline: 2px solid white;
+                outline-offset: 1px;
+            }
+            #${PIP_ROOT_ID}.minilyrics-collapsed .minilyrics-translation-toggle {
+                display: none;
+            }
+
             #${PIP_ROOT_ID}.minilyrics-collapsed
             .minilyrics-shell {
                 width: 52px;
@@ -188,6 +222,14 @@
             #${PIP_ROOT_ID}.minilyrics-collapsed
             .minilyrics-viewport {
                 display: none;
+            }
+
+            #${PIP_ROOT_ID}.minilyrics-measuring .minilyrics-shell,
+            #${PIP_ROOT_ID}.minilyrics-measuring .minilyrics-panel,
+            #${PIP_ROOT_ID}.minilyrics-measuring .minilyrics-viewport,
+            #${PIP_ROOT_ID}.minilyrics-measuring .minilyrics-line,
+            #${PIP_ROOT_ID}.minilyrics-measuring .minilyrics-translation {
+                transition: none !important;
             }
 
             #${PIP_ROOT_ID}.minilyrics-peek-through
@@ -354,6 +396,48 @@
                 max-height: 120px;
                 margin-top: 4px;
                 transform: translateY(0);
+            }
+
+            /* Searching: three dots move like a small wave. */
+            #${PIP_ROOT_ID} .minilyrics-empty {
+                display: grid;
+                grid-template-columns: 58px minmax(0, 1fr) 58px;
+                gap: 8px;
+                padding: 12px 8px;
+            }
+            #${PIP_ROOT_ID} .minilyrics-empty::before { content: ''; }
+            #${PIP_ROOT_ID} .minilyrics-empty-text { min-width: 0; }
+            #${PIP_ROOT_ID} .minilyrics-cat-lane {
+                position: relative; width: 58px; height: 28px;
+                flex: 0 0 58px; overflow: hidden;
+            }
+            #${PIP_ROOT_ID} .minilyrics-empty-cat {
+                position: absolute; width: 24px; height: 24px; left: 0; bottom: 0;
+                animation: minilyrics-cat-roam 7.2s linear infinite;
+            }
+            #${PIP_ROOT_ID} .minilyrics-empty-cat span { position: absolute; display: block; }
+            #${PIP_ROOT_ID} .cat-body { left: 5px; top: 12px; width: 13px; height: 7px; background: currentColor; }
+            #${PIP_ROOT_ID} .cat-head {
+                left: 15px; top: 7px; width: 8px; height: 9px; background: currentColor;
+                box-shadow: -1px -3px 0 -1px currentColor, 1px -3px 0 -1px currentColor;
+            }
+            #${PIP_ROOT_ID} .cat-tail { left: 2px; top: 7px; width: 3px; height: 10px; background: currentColor; }
+            #${PIP_ROOT_ID} .cat-feet {
+                left: 6px; top: 19px; width: 3px; height: 3px;
+                background: currentColor; box-shadow: 9px 0 currentColor;
+                animation: minilyrics-cat-step 480ms steps(2, end) infinite;
+            }
+            @keyframes minilyrics-cat-step { to { transform: translateX(2px); } }
+            @keyframes minilyrics-cat-roam {
+                0% { transform: translateX(0) scaleX(1); }
+                49% { transform: translateX(32px) scaleX(1); }
+                50% { transform: translateX(32px) scaleX(-1); }
+                99% { transform: translateX(0) scaleX(-1); }
+                100% { transform: translateX(0) scaleX(1); }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                #${PIP_ROOT_ID} .minilyrics-empty-cat,
+                #${PIP_ROOT_ID} .cat-feet { animation: none; }
             }
 
             /* Searching: three dots move like a small wave. */

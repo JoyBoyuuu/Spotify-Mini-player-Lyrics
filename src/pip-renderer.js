@@ -175,6 +175,14 @@
         };
     }
 
+    function updateTranslationToggle(root) {
+        const button = root.querySelector(".minilyrics-translation-toggle");
+        if (!button) return;
+        button.setAttribute("aria-pressed", String(translationsEnabled));
+        button.title = translationsEnabled ? "關閉翻譯" : "開啟翻譯";
+        button.setAttribute("aria-label", button.title);
+    }
+
     function createPiPUI(doc) {
         injectPiPStyles(doc);
 
@@ -209,6 +217,11 @@
                         class="minilyrics-viewport">
                     </div>
                 </div>
+                <button
+                    class="minilyrics-translation-toggle"
+                    type="button"
+                    aria-label="關閉翻譯"
+                    aria-pressed="true">譯</button>
             </div>
         `;
 
@@ -229,25 +242,55 @@
                     );
 
                 resetLyricsHoverReveal(root);
-                setPiPCollapsed(root, collapse);
+                if (collapse) {
+                    setPiPCollapsed(root, true);
+                    return;
+                }
 
-                if (
-                    !collapse &&
-                    lyricLines.length
-                ) {
+                // Measure at the final expanded width, not partway through
+                // the panel's width/padding transition from the 52px capsule.
+                root.classList.add("minilyrics-measuring");
+                try {
+                    setPiPCollapsed(root, false);
+                    void root.offsetWidth;
                     lastRenderedPiPIndex = null;
-
-                    requestAnimationFrame(
-                        () => renderPiPLyrics(
-                            currentLineIndex
-                        )
-                    );
-                } else if (!collapse) {
-                    renderPiPStatus(displayStatus);
+                    if (lyricLines.length) {
+                        renderPiPLyrics(currentLineIndex);
+                    } else {
+                        renderPiPStatus(displayStatus);
+                    }
+                    // Commit the computed height before restoring transitions.
+                    void root.offsetHeight;
+                } finally {
+                    root.classList.remove("minilyrics-measuring");
                 }
             }
         );
 
+        root.querySelector(".minilyrics-translation-toggle").addEventListener("click", event => {
+            event.preventDefault();
+            event.stopPropagation();
+            translationsEnabled = !translationsEnabled;
+            // Discard results from any translation task started before this toggle.
+            ++translationRequestId;
+            try {
+                localStorage.setItem("miniLyrics.translationsEnabled", String(translationsEnabled));
+            } catch {}
+            resetLyricsHoverReveal(root);
+            updateTranslationToggle(root);
+            root.classList.add("minilyrics-measuring");
+            try {
+                lastRenderedPiPIndex = null;
+                renderPiPLyrics(currentLineIndex);
+                void root.offsetHeight;
+            } finally {
+                root.classList.remove("minilyrics-measuring");
+            }
+            if (translationsEnabled && currentTrack && lyricLines.length) {
+                loadNeteaseTranslation(currentTrack, requestId);
+            }
+        });
+        updateTranslationToggle(root);
         doc.body.appendChild(root);
 
         setPiPCollapsed(
@@ -293,6 +336,11 @@
         const isSearching =
             /^Searching(?::|\b)/i
                 .test(text);
+
+        if (text === "No synchronized lyrics" || text === "Unable to parse lyrics") {
+            renderMissingLyrics(panel);
+            return;
+        }
 
         if (isSearching) {
             panel.innerHTML = `
@@ -651,7 +699,7 @@
         node.textContent = value;
 
         const visible =
-            Boolean(value) && isCurrent;
+            translationsEnabled && Boolean(value) && isCurrent;
 
         /*
          * Do not use display:none. Keeping the node mounted makes PiP

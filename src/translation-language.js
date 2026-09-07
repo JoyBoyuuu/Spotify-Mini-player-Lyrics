@@ -107,10 +107,7 @@
             language
         );
 
-        return (
-            language !== "zh" &&
-            language !== "unknown"
-        );
+        return lines.some(line => lineNeedsChineseTranslation(line.text, language));
     }
 
     function hasHangul(text) {
