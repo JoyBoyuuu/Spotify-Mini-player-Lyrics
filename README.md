@@ -1,6 +1,6 @@
 # Spotify Mini Player Lyrics
 
-**English version guide** | [繁體中文導覽](./README.zh-TW.md)
+**English version guide** | [中文導覽](./README.zh-TW.md)
 
 Synchronized lyrics and optional Traditional Chinese translations inside Spotify's native Mini Player on Windows.
 
