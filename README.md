@@ -19,9 +19,14 @@ See the current line and nearby lyrics over the album artwork, with a compact tr
 
 ## Requirements
 
-- Windows and Spotify Desktop
+- Windows
+- Spotify Desktop installed using Spotify's **direct desktop installer** from the [official Spotify website](https://www.spotify.com/download/windows/)
+  - The direct Spotify installer is recommended for the smoothest Spicetify setup.
+  - Avoid the Microsoft Store version when possible. Spicetify's official FAQ notes that the Store version is a common cause of `pref_file` / `prefs` detection problems on Windows.
 - [Spicetify](https://spicetify.app/docs/getting-started) installed and working
 - Internet access for lyric lookup
+
+If you currently use the Microsoft Store version and Spicetify cannot find Spotify or its `prefs` file, uninstall that version and install Spotify directly from the official Spotify website, then open Spotify and sign in once before continuing. See the official [Spicetify FAQ](https://spicetify.app/docs/faq) for the current Windows guidance.
 
 If you have not installed Spicetify yet, complete its official setup first. Open Spotify and sign in before setting up Spicetify.
 
@@ -203,6 +208,8 @@ If the issue started after a Spotify update, run:
 spicetify backup apply
 ```
 
+Spicetify's official FAQ recommends `spicetify backup apply` after Spotify updates rather than repeatedly treating `spicetify apply` as a normal startup command.
+
 If your Spicetify version needs updating, use `spicetify upgrade` for script-based installations. If you installed it through a package manager, update it through that package manager.
 
 If it still fails, try:
@@ -218,7 +225,21 @@ If a new Spotify release is not yet supported, consult the [Spicetify FAQ](https
 ### PowerShell cannot find spicetify, or Spicetify cannot find Spotify
 
 - **Command not recognized:** complete the [Spicetify installation](https://spicetify.app/docs/getting-started), open a new PowerShell window, and try `spicetify --version`.
-- **Spotify or prefs file not found:** open Spotify, sign in, then follow the official [prefs-path troubleshooting](https://spicetify.app/docs/faq).
+- **Spotify or `pref_file` / `prefs` not found:** first check Spotify's About page to see where Spotify was installed. If you use the Microsoft Store version, Spicetify's official Windows troubleshooting recommends uninstalling it and installing the normal desktop version directly from the [Spotify website](https://www.spotify.com/download/windows/). Open Spotify, sign in once, then try Spicetify again.
+- **You already use Spotify's direct desktop installer but `prefs` is still not found:** check whether this file exists:
+
+  ```text
+  C:\Users\YOUR_USERNAME\AppData\Roaming\Spotify\prefs
+  ```
+
+  If it exists, set the path explicitly and apply again:
+
+  ```powershell
+  spicetify config prefs_path "C:\Users\YOUR_USERNAME\AppData\Roaming\Spotify\prefs"
+  spicetify apply
+  ```
+
+  Replace `YOUR_USERNAME` with your Windows user folder name. See the official [Spicetify FAQ](https://spicetify.app/docs/faq) if the path differs on your system.
 
 ### Some songs have no lyrics or incorrect timing
 
@@ -250,6 +271,7 @@ Spotify, Marketplace, and other extensions can produce their own errors. Message
 Open an [issue](https://github.com/JoyBoyuuu/Spotify-Mini-player-Lyrics/issues) with:
 
 - Windows, Spotify, and Spicetify versions
+- How Spotify was installed (direct Spotify installer or Microsoft Store)
 - The affected song and whether other songs work
 - Whether original lyrics or only translations fail
 - Whether other Spicetify extensions work
