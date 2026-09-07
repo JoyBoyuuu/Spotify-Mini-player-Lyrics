@@ -19,9 +19,14 @@
 
 ## 使用需求
 
-- Windows 與 Spotify 桌面版
+- Windows
+- 使用 Spotify 官方網站提供的 **一般桌面安裝版 Spotify**
+  - 建議從 [Spotify 官方網站](https://www.spotify.com/tw/download/other/) 下載 Windows 版。
+  - 若可以選擇，建議避免 Microsoft Store 版本。Spicetify 官方 FAQ 指出，Windows 上的 `pref_file` / `prefs` 偵測問題很常與 Microsoft Store 版 Spotify 有關。
 - 已安裝並可正常使用的 [Spicetify](https://spicetify.app/docs/getting-started)
 - 可連線至歌詞來源的網路
+
+如果你目前使用 Microsoft Store 版 Spotify，而且 Spicetify 找不到 Spotify 或 `prefs` 檔案，請先移除該版本，再從 Spotify 官方網站安裝一般桌面版。安裝後先開啟 Spotify、登入一次，再繼續設定 Spicetify。最新處理方式可參考官方 [Spicetify FAQ](https://spicetify.app/docs/faq)。
 
 如果尚未安裝 Spicetify，請先依官方指南完成設定。設定前先開啟 Spotify 並登入帳號。
 
@@ -203,6 +208,8 @@ spicetify apply
 spicetify backup apply
 ```
 
+Spicetify 官方 FAQ 建議 Spotify 更新後使用 `spicetify backup apply`，而不是把 `spicetify apply` 當成每次開啟 Spotify 都要執行的啟動指令。
+
 如果需要更新 Spicetify，透過安裝腳本安裝的版本可使用 `spicetify upgrade`；透過套件管理工具安裝的版本，則使用原本的套件管理工具更新。
 
 仍無法使用時，嘗試：
@@ -218,7 +225,21 @@ spicetify restore backup apply
 ### PowerShell 找不到 spicetify 或 Spicetify 找不到 Spotify
 
 - **無法辨識指令：** 完成 [Spicetify 安裝](https://spicetify.app/docs/getting-started)，重新開啟 PowerShell，再試 `spicetify --version`。
-- **找不到 Spotify 或 prefs 檔案：** 先開啟 Spotify 並登入，再依官方 [prefs 路徑排錯說明](https://spicetify.app/docs/faq)處理。
+- **找不到 Spotify 或 `pref_file` / `prefs`：** 先到 Spotify 的「關於」頁確認安裝來源。如果使用的是 Microsoft Store 版，Spicetify 官方 Windows 排錯建議是先移除該版本，再從 [Spotify 官方網站](https://www.spotify.com/tw/download/other/) 安裝一般桌面版。安裝後先開啟 Spotify 並登入一次，再重新執行 Spicetify。
+- **已經使用 Spotify 官網桌面版，但仍找不到 `prefs`：** 檢查下列檔案是否存在：
+
+  ```text
+  C:\Users\YOUR_USERNAME\AppData\Roaming\Spotify\prefs
+  ```
+
+  如果存在，可以直接指定路徑後重新套用：
+
+  ```powershell
+  spicetify config prefs_path "C:\Users\YOUR_USERNAME\AppData\Roaming\Spotify\prefs"
+  spicetify apply
+  ```
+
+  將 `YOUR_USERNAME` 換成你的 Windows 使用者資料夾名稱。如果實際路徑不同，請參考官方 [Spicetify FAQ](https://spicetify.app/docs/faq)。
 
 ### 部分歌曲沒有歌詞或時間不準
 
@@ -250,6 +271,7 @@ Spotify、Marketplace 及其他擴充功能都可能產生自己的錯誤。`rem
 請建立 [issue](https://github.com/JoyBoyuuu/Spotify-Mini-player-Lyrics/issues)，並提供：
 
 - Windows、Spotify 與 Spicetify 版本
+- Spotify 的安裝來源（Spotify 官網桌面安裝版或 Microsoft Store）
 - 發生問題的歌曲，以及其他歌曲是否正常
 - 是原文歌詞失敗，還是只有翻譯失敗
 - 其他 Spicetify 擴充功能是否正常
