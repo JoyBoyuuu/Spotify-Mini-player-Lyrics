@@ -1,273 +1,141 @@
 # Spotify Mini Player Lyrics
 
-Synchronized lyrics and optional Traditional Chinese translations directly inside Spotify's native Picture-in-Picture Mini Player.
+Synchronized lyrics and optional Traditional Chinese translations inside Spotify's native Mini Player on Windows.
 
-This is a lightweight [Spicetify](https://spicetify.app/) extension for **Spotify Desktop on Windows**. It follows Spotify's playback position, fetches synchronized lyrics from [LRCLIB](https://lrclib.net/), and displays the previous, current, and next lyric lines inside the native Mini Player.
+See the current line and nearby lyrics over the album artwork, with a compact translucent panel that follows playback and seeking.
 
-> [!IMPORTANT]
-> **You do not need to keep PowerShell, Terminal, Node.js, or any background script running.**
-> After the extension has been installed and applied once, just open Spotify normally. A terminal is only needed for installation, updating the extension, troubleshooting, or re-applying Spicetify after a Spotify update.
+> **Once installed, just open Spotify and play music.** You can close PowerShell after installation. Normal use does not require Node.js, npm, or a background script.
 
-## Features
+## Start here
 
-- Synchronized lyrics in Spotify's native Mini Player
-- Smooth previous/current/next lyric scrolling
-- Full multi-line lyrics without ellipsis truncation
-- Seek-aware synchronization
-- Automatic song-change detection
-- Responsive compact overlay above the playback timeline
-- Persistent collapse / expand control
-- Two-second pointer-hover fade to reveal covered playback controls
-- Animated lyric-search status
-- LRCLIB exact lookup with search fallback
-- Optional Traditional Chinese translations from NetEase lyric data
-- Simplified-to-Traditional Chinese conversion with OpenCC
-- Background translation loading without delaying the original lyrics
-- Korean, Japanese, Spanish, and mixed-language lyric handling
-- Romanized Korean detection and native-script replacement when reliable
-
----
+- [Install the extension](#installation)
+- [Use the Mini Player controls](#mini-player-controls)
+- [Update the extension](#updating)
+- [Set up optional translations](#optional-traditional-chinese-translations)
+- [Fix a problem](#troubleshooting)
+- [Modify the source code](#for-developers)
 
 ## Requirements
 
-You need:
+- Windows and Spotify Desktop
+- [Spicetify](https://spicetify.app/docs/getting-started) installed and working
+- Internet access for lyric lookup
 
-- **Windows**
-- **Spotify Desktop**
-- **Spicetify CLI**
-- An internet connection for lyric lookup
+If you have not installed Spicetify yet, complete its official setup first. Open Spotify and sign in before setting up Spicetify.
 
-You **do not** need Node.js or npm unless you want to modify or build the source code yourself.
+Original lyrics work without a translation proxy. Translations require the [optional setup below](#optional-traditional-chinese-translations).
 
-If you have never installed Spicetify, follow the official guide first:
+## Installation
 
-- [Spicetify Getting Started](https://spicetify.app/docs/getting-started)
+### 1. Download the file
 
-For a fresh Spotify installation, it is a good idea to open Spotify, sign in, and leave it running briefly before installing Spicetify so Spotify can create the files Spicetify needs.
+Open [miniLyrics.js](./miniLyrics.js), then click **Download raw file** in the file toolbar.
 
----
+Save it as `miniLyrics.js`. Do not copy the code manually or save the GitHub webpage as HTML.
 
-# Installation
+You only need this one file. You do not need to download or clone the entire repository.
 
-## 1. Download `miniLyrics.js`
+### 2. Put it in the Extensions folder
 
-Download this file from the repository:
-
-- [`miniLyrics.js`](./miniLyrics.js)
-
-You only need the generated `miniLyrics.js` file for normal use.
-
-You do **not** need to clone the whole repository.
-
-## 2. Copy it to the Spicetify Extensions folder
-
-Place the file here:
+Press **Win + R**, paste the following path, and press Enter:
 
 ```text
-%APPDATA%\spicetify\Extensions\miniLyrics.js
+%APPDATA%\spicetify\Extensions
 ```
 
-The final path should look similar to:
+Copy the downloaded `miniLyrics.js` into that folder. If prompted, replace the existing file.
 
-```text
-C:\Users\YOUR_NAME\AppData\Roaming\spicetify\Extensions\miniLyrics.js
-```
+If the folder does not exist, open `%APPDATA%\spicetify` and create a folder named `Extensions`. If the Spicetify folder itself is missing, finish the Spicetify setup first.
 
-You can open the folder directly from PowerShell with:
+The final filename must be `miniLyrics.js`, not `miniLyrics.js.txt` or `miniLyrics (1).js`. Turn on **File name extensions** in File Explorer if you need to check.
 
-```powershell
-explorer "$env:APPDATA\spicetify\Extensions"
-```
+### 3. Enable it
 
-If the `Extensions` folder does not exist, create it.
-
-## 3. Enable the extension
-
-Open PowerShell and run:
+Open PowerShell, paste these commands, and press Enter:
 
 ```powershell
 spicetify config extensions miniLyrics.js
 spicetify apply
 ```
 
-This normally only needs to be done **once during installation**.
+These commands can run from any folder. Copy only the commands, not a terminal prompt such as `PS C:\...`.
 
-## 4. Start Spotify normally
+If you previously enabled a versioned file such as `miniLyricsV18.js`, [disable that old entry](#old-behavior-or-two-lyric-overlays) as well.
 
-Close and reopen Spotify if necessary, play a song, then open Spotify's native Mini Player.
+### 4. Open the Mini Player
 
-No terminal needs to remain open.
+Play a song in Spotify and open its native Mini Player using the Mini Player button in Spotify's playback area. If necessary, close and reopen Spotify after applying the extension.
 
-Expected daily usage:
+Lyrics appear automatically when a matching synchronized entry is available. You can now close PowerShell.
 
-```text
-Open Spotify
-    ↓
-Play a song
-    ↓
-Open Mini Player
-    ↓
-Lyrics appear automatically
-```
+This extension adds lyrics to Spotify's existing Mini Player; it does not create a separate desktop player.
 
----
+## Mini Player controls
 
-# Verify the installation
+| Control | What it does |
+| --- | --- |
+| Short line at the top-right | Collapses the lyrics into a small pill; click the pill to expand again. |
+| `譯` at the top-left | Toggles translations. Bright means enabled; dim means disabled. Requires translation setup. |
+| Pointer over lyrics for two seconds | Fades the panel so playback controls beneath it are easier to see. |
+| Pointer leaving the lyrics | Restores the panel. |
 
-If you want to confirm that everything was installed correctly, use these checks.
+Collapse and translation preferences are remembered across songs and Mini Player sessions.
 
-## Check that Spicetify has the extension enabled
+Lyrics scroll with playback, support multiple lines, and update when you seek. When synchronized lyrics are missing or unusable, a centered casual message and a small monochrome pixel cat appear. The cat stays still if your system requests reduced motion.
 
-```powershell
-spicetify config extensions
-```
+## Updating
 
-The result should include:
+For normal users:
 
-```text
-miniLyrics.js
-```
+1. Download the newest [miniLyrics.js](./miniLyrics.js) using **Download raw file**.
+2. Replace the copy in `%APPDATA%\spicetify\Extensions`.
+3. Run this in PowerShell:
 
-## Check that the file exists in the correct folder
+   ```powershell
+   spicetify apply
+   ```
 
-```powershell
-Test-Path "$env:APPDATA\spicetify\Extensions\miniLyrics.js"
-```
+4. Reopen Spotify if the new behavior does not appear.
 
-Expected result:
+You do not need to enable the same filename again or run `npm run verify`. Updating a copy in Downloads alone does not update the copy Spicetify loads.
 
-```text
-True
-```
+### After Spotify updates
 
-If both checks are correct, run:
+Spotify updates can remove Spicetify's applied changes. Follow the [recovery steps below](#spicetify-customizations-disappeared-or-apply-fails) if the extension disappears.
 
-```powershell
-spicetify apply
-```
+## Optional Traditional Chinese translations
 
-Then completely close Spotify and open it again.
+Original lyrics come from [LRCLIB](https://lrclib.net/). Translations use existing NetEase lyrics and OpenCC for Traditional Chinese conversion.
 
----
+All non-Chinese lyrics, including English songs, are eligible. The extension uses the provider's full-line translation when available. For split mixed-language lines, it joins available translations and preserves untranslated English fragments belonging to that line.
 
-# Updating Mini Player Lyrics
+This is not a machine-translation service: some songs or lines have no usable translation. Original lyrics remain visible even when translations are unavailable.
 
-For normal users, updating is simple:
+### 1. Deploy the included proxy
 
-1. Download the newest `miniLyrics.js`.
-2. Replace the existing file in:
+Spotify cannot request NetEase directly because of browser CORS restrictions. You need a Cloudflare account and your own Cloudflare Worker:
 
-```text
-%APPDATA%\spicetify\Extensions\miniLyrics.js
-```
+1. Open [netease-cors-worker.js](./netease-cors-worker.js) and copy its complete contents.
+2. Create a Worker in Cloudflare's Workers dashboard.
+3. Replace the Worker's starter code with that file and deploy it.
+4. Copy the deployed HTTPS address, such as `https://YOUR-WORKER.workers.dev/`.
 
-3. Run:
+The Worker is a separately deployed service. Do not add it to Spicetify's Extensions folder. It restricts requests to the NetEase host and lyric/search endpoints used by this extension.
 
-```powershell
-spicetify apply
-```
+### 2. Open Spotify Developer Tools
 
-4. Reopen Spotify.
-
-If you cloned this repository for development, you can instead rebuild and copy the generated file:
-
-```powershell
-npm run verify
-Copy-Item ".\miniLyrics.js" "$env:APPDATA\spicetify\Extensions\miniLyrics.js" -Force
-spicetify apply
-```
-
-`npm run verify` is a **development/build command**. It is not required every time Spotify starts.
-
----
-
-# After Spotify updates
-
-Spotify updates can overwrite the files modified by Spicetify. If Mini Player Lyrics suddenly disappears after a Spotify update, run:
-
-```powershell
-spicetify backup apply
-```
-
-Then restart Spotify.
-
-If Spicetify itself also needs an update:
-
-```powershell
-spicetify update
-```
-
-If the installation is still broken, try a full restore and re-apply:
-
-```powershell
-spicetify restore backup apply
-```
-
-If a brand-new Spotify version is not yet supported by Spicetify, you may need to wait for Spicetify compatibility to catch up. Check the official Spicetify issue tracker before changing unrelated Mini Player Lyrics settings.
-
----
-
-# Mini Player controls
-
-Click the `譯` button at the top-left to toggle translations. It is brighter when enabled and dimmer when disabled. The choice is saved across songs and sessions; turning it off skips new translation lookups.
-
-- Click the short line in the top-right of the lyric panel to collapse it.
-- Click the compact collapsed control to expand the lyrics again.
-- The collapsed state is saved across song changes and Mini Player sessions.
-- Keep the pointer over the lyric panel for about two seconds to fade the overlay and reveal controls underneath it.
-- Move the pointer outside the lyric panel to restore it immediately.
-
----
-
-# Optional Traditional Chinese translations
-
-Original synchronized lyrics work without this section.
-
-Traditional Chinese translations are optional and require a small CORS proxy because Spotify's embedded browser cannot directly call the NetEase lyric endpoints used by the extension.
-
-## 1. Deploy your own Cloudflare Worker
-
-This repository includes:
-
-```text
-netease-cors-worker.js
-```
-
-Create a Cloudflare Worker, copy the contents of that file into the Worker, and deploy it.
-
-Your Worker URL should look similar to:
-
-```text
-https://YOUR-WORKER.workers.dev/
-```
-
-Use your own Worker deployment rather than another user's Worker URL.
-
-## 2. Enable Spotify Developer Tools
-
-If `Ctrl + Shift + I` does not open Spotify Developer Tools, run:
+In PowerShell, run:
 
 ```powershell
 spicetify enable-devtools
-```
-
-If necessary, follow it with:
-
-```powershell
 spicetify apply
 ```
 
-Restart Spotify and try:
+Reopen Spotify if needed, then press **Ctrl + Shift + I** and select the **Console** tab.
 
-```text
-Ctrl + Shift + I
-```
+### 3. Save your proxy URL
 
-Developer Tools are only needed to configure or inspect the optional translation proxy. They do not need to stay open afterward.
-
-## 3. Save the Worker URL
-
-Open the Spotify Developer Tools Console and run:
+Paste this into the **Spotify Developer Tools Console**, not PowerShell. Replace the example address with your deployed Worker URL and keep `?url=` at the end:
 
 ```javascript
 localStorage.setItem(
@@ -276,165 +144,44 @@ localStorage.setItem(
 );
 ```
 
-Replace `YOUR-WORKER` with your actual Worker address.
-
-Then reload Spotify or run:
-
-```powershell
-spicetify apply
-```
-
-Verify the saved value in the Developer Tools Console:
+Check the saved value in the same Console:
 
 ```javascript
 localStorage.getItem("miniLyrics.neteaseProxy");
 ```
 
-It should return your Worker URL.
+It should return your full URL, including `?url=`. Reload Spotify and make sure the `譯` button is enabled.
 
-## Translation behavior
+Developer Tools can now be closed. This setup is only needed once, or when your Worker address changes.
 
-The extension keeps LRCLIB as the canonical synchronized lyric timeline. NetEase is searched asynchronously for matching translated lyrics.
+Translations load in the background and can appear a few seconds after the original lyrics. Successful matches are cached locally. Only the current lyric line displays its translation.
 
-This means:
+## Troubleshooting
 
-- Original lyrics can appear before translations.
-- Translations may take a few seconds on first playback.
-- Successful matches are cached locally.
-- Not every song has a usable translation.
-- If the match confidence is too low, the extension intentionally keeps the original lyrics instead of showing a likely incorrect translation.
+### Nothing appears
 
----
-
-# Troubleshooting
-
-## Do I need to open PowerShell every time I use Spotify?
-
-**No.**
-
-If the extension is installed correctly, you should simply open Spotify normally.
-
-PowerShell is only needed when you:
-
-- install the extension for the first time;
-- update `miniLyrics.js`;
-- re-apply Spicetify after a Spotify update;
-- enable Developer Tools;
-- troubleshoot the installation.
-
-If lyrics only work after you manually run a command every single time Spotify starts, check the sections below.
-
----
-
-## Lyrics only work after I run `spicetify apply`
-
-First check whether the extension is permanently enabled:
-
-```powershell
-spicetify config extensions
-```
-
-Make sure this appears:
-
-```text
-miniLyrics.js
-```
-
-Then confirm the actual file exists:
+First check the file and enabled extension in PowerShell:
 
 ```powershell
 Test-Path "$env:APPDATA\spicetify\Extensions\miniLyrics.js"
-```
-
-Expected result:
-
-```text
-True
-```
-
-If either check fails, repeat the installation steps.
-
-If both are correct, run once:
-
-```powershell
-spicetify backup apply
-```
-
-Then completely close Spotify, including any background Spotify process, and open Spotify normally again.
-
----
-
-## I have been running `npm run verify` every time
-
-You do not need to do that.
-
-`npm run verify` only rebuilds and checks the generated JavaScript file for development purposes.
-
-Normal users only need the final file:
-
-```text
-miniLyrics.js
-```
-
-Once it is copied into the Spicetify Extensions directory and enabled, no Node.js process is required.
-
----
-
-## `miniLyrics.js` is in my Downloads or GitHub folder
-
-That copy is not automatically loaded by Spotify.
-
-The file Spicetify uses must be located here:
-
-```text
-%APPDATA%\spicetify\Extensions\miniLyrics.js
-```
-
-Copy it there, then run:
-
-```powershell
-spicetify config extensions miniLyrics.js
-spicetify apply
-```
-
----
-
-## The extension is enabled but nothing appears
-
-Run:
-
-```powershell
 spicetify config extensions
 ```
 
-Confirm that `miniLyrics.js` is listed.
+The first command should return `True`; the second should include `miniLyrics.js`.
 
-Then run:
+- If the file is missing, repeat installation step 2.
+- If the filename is not enabled, repeat installation step 3.
+- If a small collapsed pill is visible, click it to expand the lyrics.
+- Confirm that you opened Spotify's native Mini Player.
+- If all checks pass, run `spicetify apply`, fully exit Spotify, and reopen it.
 
-```powershell
-spicetify apply
-```
+You should not need to repeat these steps every time Spotify starts.
 
-Completely close Spotify and reopen it.
+### Old behavior or two lyric overlays
 
-Also make sure you are opening Spotify's **native Mini Player**. The extension does not create a separate standalone desktop window.
+Spicetify adds extension names to its list; enabling a new filename does not remove an old one.
 
----
-
-## An old version of MiniLyrics is still enabled
-
-Spicetify appends extension names instead of replacing the old list automatically.
-
-For example, if this appears:
-
-```text
-miniLyricsV18.js
-miniLyrics.js
-```
-
-both scripts may be loaded at the same time and inject duplicate overlays or conflicting behavior.
-
-Remove the old extension from the config:
+Check `spicetify config extensions`. For example, if `miniLyricsV18.js` is also enabled, run:
 
 ```powershell
 spicetify config extensions miniLyricsV18.js-
@@ -442,451 +189,115 @@ spicetify config extensions miniLyrics.js
 spicetify apply
 ```
 
-Replace `miniLyricsV18.js` with the actual old filename if yours is different.
+Replace `miniLyricsV18.js` with your actual old filename. The trailing `-` disables that entry without deleting the file. Keep your other unrelated extensions enabled.
 
-Check again with:
+Also confirm you replaced the file in the Extensions folder, not just the copy in Downloads or a development repository.
 
-```powershell
-spicetify config extensions
-```
+### Spicetify customizations disappeared or apply fails
 
-Only the version you intend to use should remain enabled.
-
-You can also remove obsolete MiniLyrics files from:
-
-```text
-%APPDATA%\spicetify\Extensions\
-```
-
----
-
-## I replaced `miniLyrics.js`, but Spotify still shows the old behavior
-
-Make sure you replaced the copy inside:
-
-```text
-%APPDATA%\spicetify\Extensions\miniLyrics.js
-```
-
-not only the copy in your cloned repository or Downloads folder.
-
-Then run:
-
-```powershell
-spicetify apply
-```
-
-and restart Spotify.
-
-If necessary, fully exit Spotify from the system tray or Task Manager before reopening it.
-
----
-
-## The extension disappeared after a Spotify update
-
-Run:
+If the issue started after a Spotify update, run:
 
 ```powershell
 spicetify backup apply
 ```
 
-If that does not work:
+If your Spicetify version needs updating, use `spicetify upgrade` for script-based installations. If you installed it through a package manager, update it through that package manager.
 
-```powershell
-spicetify update
-spicetify restore backup apply
-```
-
-If the newest Spotify client is temporarily unsupported, check Spicetify's official issue tracker.
-
----
-
-## `spicetify apply` fails after a Spotify update
-
-Do not repeatedly run random repair commands.
-
-Try the official recovery sequence:
-
-```powershell
-spicetify backup apply
-```
-
-If necessary:
-
-```powershell
-spicetify update
-```
-
-Then:
+If it still fails, try:
 
 ```powershell
 spicetify restore backup apply
 ```
 
-If the error started immediately after a new Spotify release, verify that the installed Spotify version is supported by the current Spicetify release.
+This restores Spotify's original files and reapplies your configured customizations; it does not erase your extension settings. Restart Spotify afterward.
 
----
+If a new Spotify release is not yet supported, consult the [Spicetify FAQ](https://spicetify.app/docs/faq) and [issue tracker](https://github.com/spicetify/cli/issues). If every theme and extension is affected, resolve Spicetify compatibility before debugging this extension.
 
-## `spicetify` is not recognized as a command
+### PowerShell cannot find spicetify, or Spicetify cannot find Spotify
 
-Spicetify is either not installed correctly or is not available in your shell's PATH.
+- **Command not recognized:** complete the [Spicetify installation](https://spicetify.app/docs/getting-started), open a new PowerShell window, and try `spicetify --version`.
+- **Spotify or prefs file not found:** open Spotify, sign in, then follow the official [prefs-path troubleshooting](https://spicetify.app/docs/faq).
 
-Install or repair Spicetify using the official instructions:
+### Some songs have no lyrics or incorrect timing
 
-- [Spicetify Getting Started](https://spicetify.app/docs/getting-started)
+Availability depends on LRCLIB and the track metadata. Live versions, remasters, and alternate recordings may not match the available lyrics.
 
-After installation, open a **new** PowerShell window and test:
+Try another track. If others work, the extension is installed correctly and the problem may be specific to that song.
 
-```powershell
-spicetify --version
-```
+If lyrics stop following seeking or song changes, update the extension and restart Spotify. Report the track and reproduction steps if it persists.
 
----
+### Original lyrics work but translations do not
 
-## Spicetify cannot find Spotify / `prefs`
+Check these in order:
 
-This is a Spicetify setup problem rather than a Mini Player Lyrics problem.
+1. **Is `譯` enabled?** Click it if it is dim. The disabled state is remembered across songs.
+2. **Is the proxy configured?** In Spotify's Developer Tools Console, run `localStorage.getItem("miniLyrics.neteaseProxy")`. If it returns `null` or an old URL, repeat the translation setup.
+3. **Is your Worker deployed and reachable?** Use the exact configured URL, including `?url=`.
+4. **Does the song have translated lyrics?** NetEase may lack a usable match. Try another song.
 
-First open Spotify, sign in, and let it run briefly so its configuration files are created.
+Opening the bare Worker address without a `url` parameter may return a missing-URL error; that alone does not mean deployment failed.
 
-Then run:
+Delayed or partial translations can be normal. Different line segmentation or recording versions can prevent reliable alignment. Korean romanization is replaced with native text only when alignment is sufficiently confident.
 
-```powershell
-spicetify
-```
+### Console shows unrelated errors
 
-If Spicetify still reports that it cannot find the Spotify preferences file, follow the official Spicetify FAQ for `prefs_path` troubleshooting:
+Spotify, Marketplace, and other extensions can produce their own errors. Messages about `remote-config-resolver` or unrelated manifests do not by themselves identify a Mini Player Lyrics issue. Look for `[MiniLyrics]` messages when reporting a problem.
 
-- [Spicetify FAQ](https://spicetify.app/docs/faq)
+## Reporting an issue
 
----
+Open an [issue](https://github.com/JoyBoyuuu/Spotify-Mini-player-Lyrics/issues) with:
 
-## Spotify opens but Spicetify customizations are gone
-
-This commonly happens after Spotify updates.
-
-Run:
-
-```powershell
-spicetify backup apply
-```
-
-Then restart Spotify.
-
-If all Spicetify extensions/themes are missing, fix Spicetify first before debugging Mini Player Lyrics specifically.
-
----
-
-## I accidentally enabled multiple MiniLyrics files
-
-Check:
-
-```powershell
-spicetify config extensions
-```
-
-Remove old entries by adding `-` after their filename:
-
-```powershell
-spicetify config extensions OLD_FILE_NAME.js-
-```
-
-Then make sure the current file is enabled:
-
-```powershell
-spicetify config extensions miniLyrics.js
-spicetify apply
-```
-
----
-
-## I see two lyric overlays
-
-This almost always means two versions of the extension are enabled at the same time.
-
-Run:
-
-```powershell
-spicetify config extensions
-```
-
-Remove obsolete MiniLyrics entries and old JavaScript files from the Extensions directory, then apply again.
-
----
-
-## The Mini Player opens, but there are no synchronized lyrics
-
-When synchronized lyrics are missing or unusable, a centered casual message and a small monochrome pixel cat appear. The message stays stable until the song changes; the cat stays still when reduced motion is enabled. Missing translations alone do not replace available original lyrics with this empty state.
-
-Possible causes:
-
-1. The current track has no synchronized lyric entry in LRCLIB.
-2. LRCLIB cannot confidently match the track metadata.
-3. Your network cannot reach the lyric provider.
-4. The track metadata is unusual, local, unavailable, or unsupported by the upstream lyric source.
-
-Try a well-known commercial track first. If some songs work and others do not, the installation is probably fine and the missing data is upstream.
-
-Availability and timing accuracy depend on the data provided by LRCLIB.
-
----
-
-## Lyrics appear for one song but not another
-
-That normally indicates a lyric-source availability or matching issue rather than an installation problem.
-
-The extension intentionally avoids displaying a clearly mismatched lyric result.
-
----
-
-## Lyrics are not changing when I seek or change songs
-
-First update to the latest `miniLyrics.js` from this repository.
-
-Then replace the installed copy and run:
-
-```powershell
-spicetify apply
-```
-
-Restart Spotify completely.
-
-If the issue persists, open Spotify Developer Tools and look for JavaScript errors while reproducing the problem.
-
----
-
-## `Ctrl + Shift + I` does not open Spotify Developer Tools
-
-Enable Developer Tools:
-
-```powershell
-spicetify enable-devtools
-spicetify apply
-```
-
-Restart Spotify and try again.
-
-Developer Tools are **not required for normal lyric playback**. They are mainly useful for configuring the optional translation proxy and debugging.
-
----
-
-## Original lyrics work, but Traditional Chinese translations do not
-
-First verify the configured Worker URL in Spotify Developer Tools:
-
-```javascript
-localStorage.getItem("miniLyrics.neteaseProxy");
-```
-
-If it returns `null`, `undefined`, or an old address, configure it again:
-
-```javascript
-localStorage.setItem(
-  "miniLyrics.neteaseProxy",
-  "https://YOUR-WORKER.workers.dev/?url="
-);
-```
-
-Then reload Spotify.
-
-Also check:
-
-- your Cloudflare Worker is deployed;
-- the Worker URL is correct;
-- the URL ends with `/?url=` as shown above;
-- the Worker is reachable from your browser/network;
-- the song actually has matching translated lyrics on NetEase.
-
-Original LRCLIB lyrics should still work even if the translation service is unavailable.
-
----
-
-## Translation appears several seconds later
-
-This can be normal.
-
-The original synchronized lyrics are loaded first. NetEase matching and translation alignment happen asynchronously in the background so translation lookup does not delay the main lyrics.
-
-Repeated playback is usually faster because successful results can be cached locally.
-
----
-
-## Some lines are translated and others are not
-
-The extension only displays a translation when it can align the translated line to the LRCLIB timeline with sufficient confidence.
-
-Mixed-language songs, alternate lyric versions, live versions, remasters, metadata differences, and different line segmentation can reduce alignment confidence.
-
-This is intentional: keeping the original lyric is better than showing a confidently wrong translation.
-
----
-
-## Korean romanization was not replaced with Hangul
-
-Native-script replacement is only performed when the match is considered reliable.
-
-If the available timed lyrics do not align confidently with the romanized text, the original line is preserved.
-
----
-
-## I see `remote-config-resolver`, Marketplace, manifest, or unrelated console errors
-
-Spotify and Spicetify can generate console messages that are unrelated to this extension.
-
-Errors mentioning unrelated Marketplace manifests, other extensions, or Spotify's `remote-config-resolver` do not automatically mean Mini Player Lyrics is broken.
-
-When debugging, first determine whether:
-
-- `miniLyrics.js` is enabled;
-- the installed file exists in the correct Extensions directory;
-- other MiniLyrics versions are disabled;
-- original LRCLIB lyrics work on at least one known track.
-
----
-
-## Nothing works anymore and I want a clean Spicetify reset
-
-Use Spicetify's restore/reapply flow:
-
-```powershell
-spicetify restore backup apply
-```
-
-Then verify the extension again:
-
-```powershell
-spicetify config extensions
-```
-
-If `miniLyrics.js` is missing from the list:
-
-```powershell
-spicetify config extensions miniLyrics.js
-spicetify apply
-```
-
-Before doing a complete Spotify reinstall, confirm whether other Spicetify extensions work. If every Spicetify customization is broken, the root cause is probably the Spicetify/Spotify installation rather than Mini Player Lyrics.
-
----
-
-# Quick diagnostic checklist
-
-If you are reporting a problem, run these commands first:
-
-```powershell
-spicetify --version
-spicetify config extensions
-Test-Path "$env:APPDATA\spicetify\Extensions\miniLyrics.js"
-```
-
-Then check:
-
-- Does `miniLyrics.js` appear in `spicetify config extensions`?
-- Does `Test-Path` return `True`?
-- Did the problem start immediately after Spotify updated?
-- Do other Spicetify extensions still work?
-- Does Mini Player Lyrics work with a different well-known song?
-- Are multiple MiniLyrics versions enabled?
-- Do original lyrics work while only translations fail?
-
-These answers usually identify whether the problem is:
-
-```text
-Spotify / Spicetify installation
-        ↓
-Extension configuration
-        ↓
-Wrong or duplicate miniLyrics.js
-        ↓
-Lyric-provider availability
-        ↓
-Optional translation proxy
-```
-
----
-
-# Reporting an issue
-
-If the troubleshooting steps above do not solve the problem, open a GitHub issue and include:
-
-- Windows version
-- Spotify version
-- Spicetify version
+- Windows, Spotify, and Spicetify versions
+- The affected song and whether other songs work
+- Whether original lyrics or only translations fail
 - Whether other Spicetify extensions work
-- Output of:
+- Steps to reproduce, plus relevant `[MiniLyrics]` errors
+
+Include the output of these PowerShell checks:
 
 ```powershell
+spicetify --version
 spicetify config extensions
-```
-
-- Whether this returns `True`:
-
-```powershell
 Test-Path "$env:APPDATA\spicetify\Extensions\miniLyrics.js"
 ```
 
-- Whether the problem affects all tracks or only some tracks
-- Whether original lyrics work but translations fail
-- Any relevant Developer Tools Console error
-- The exact steps needed to reproduce the issue
+Do not include passwords, authentication tokens, or other private credentials.
 
-Do not post private account credentials, authentication tokens, or other secrets in an issue.
+## For developers
 
----
+Normal users can skip this section. Development requires Node.js and npm.
 
-# Language handling
+Edit files under `src/`. The root `miniLyrics.js` is generated and will be overwritten by the next build.
 
-The matching logic supports mixed-language material such as Korean or Japanese lyrics containing English lines and Spanish lyrics with English phrases.
-
-All non-Chinese lyrics, including English songs and foreign-language fragments in Chinese songs, are eligible for Traditional Chinese translation. Chinese-only lines are kept as-is (Japanese kanji lines use the track language as context).
-
-The provider's complete-line translation is preferred. When the provider splits a mixed line into fragments, available translations are joined in order and untranslated English fragments belonging to that line are preserved. Coverage still depends on NetEase; no machine-translation service is added.
-
-For Korean romanization, timed native Korean lyrics from NetEase can be used as alignment evidence. Romanized text is replaced with Hangul only when the match is sufficiently confident.
-
----
-
-# For developers
-
-Normal users can ignore this section.
-
-The maintainable source is split by responsibility under `src/`. Do not edit the generated root `miniLyrics.js` directly because the next build will replace those edits.
-
-Development requirements:
-
-- Node.js
-- npm
-
-Build and validate:
+From the repository folder:
 
 ```powershell
 npm run verify
+node scripts/test-translation-policy.cjs
 ```
 
-Build without the syntax check:
+The first command builds the extension and checks its JavaScript syntax. The second runs translation-policy regression checks; these do not replace testing the UI in Spotify.
+
+To install your local build:
 
 ```powershell
-npm run build
+Copy-Item ".\miniLyrics.js" "$env:APPDATA\spicetify\Extensions\miniLyrics.js" -Force
+spicetify apply
 ```
 
-`scripts/build.cjs` combines the ordered source files into the single shared script expected by Spicetify. When adding a source file, register it in the correct position in that build list.
+| File or folder | Purpose |
+| --- | --- |
+| `src/` | Maintainable source, including UI, providers, translation, and empty state |
+| `scripts/build.cjs` | Ordered source list and single-file build |
+| `scripts/test-translation-policy.cjs` | Translation-policy checks |
+| `miniLyrics.js` | Generated file installed in Spicetify |
+| `netease-cors-worker.js` | Optional proxy, deployed separately to Cloudflare |
+| `package.json` | Build commands |
 
-Project structure:
+Register new source files in `scripts/build.cjs`. Sources are combined into one shared function scope; they are not independently loaded modules. Use `npm run build` if you only want to rebuild without the syntax check.
 
-```text
-src/                       Maintainable extension source
-scripts/build.cjs          Single-file build script
-miniLyrics.js              Generated Spicetify extension
-netease-cors-worker.js     Optional restricted NetEase CORS proxy
-package.json               Build and validation commands
-```
+## Sources and disclaimer
 
----
+Lyrics are retrieved at runtime from LRCLIB and, when configured, NetEase. This project does not bundle a lyric database. Availability and accuracy depend on upstream data and matching quality.
 
-# Lyrics sources and disclaimer
-
-This project does not bundle or redistribute a lyrics database.
-
-Lyrics are retrieved at runtime from LRCLIB and, when configured, NetEase. Availability and accuracy depend on upstream data and matching quality.
-
-Spotify Mini Player Lyrics is an unofficial community project. It is not affiliated with, endorsed by, or associated with Spotify, Spicetify, LRCLIB, NetEase, Cloudflare, or OpenCC.
+Spotify Mini Player Lyrics is an unofficial community project, not affiliated with or endorsed by Spotify, Spicetify, LRCLIB, NetEase, Cloudflare, or OpenCC.
