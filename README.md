@@ -1,5 +1,7 @@
 # Spotify Mini Player Lyrics
 
+**English** | [繁體中文](./README.zh-TW.md)
+
 Synchronized lyrics and optional Traditional Chinese translations inside Spotify's native Mini Player on Windows.
 
 See the current line and nearby lyrics over the album artwork, with a compact translucent panel that follows playback and seeking.
