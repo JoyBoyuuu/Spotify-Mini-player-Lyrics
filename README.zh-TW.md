@@ -1,6 +1,6 @@
 # Spotify Mini Player Lyrics
 
-[English version guide](./README.md) | **繁體中文導覽**
+[English version guide](./README.md) | **中文導覽**
 
 在 Windows 版 Spotify 原生迷你播放器中，顯示同步歌詞與可選的繁體中文翻譯。
 
