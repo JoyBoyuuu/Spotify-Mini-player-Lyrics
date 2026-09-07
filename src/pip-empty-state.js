@@ -23,9 +23,9 @@ const MISSING_LYRICS_MESSAGES = [
     "沒歌詞但你知道章魚有三顆心臟嗎，酷齁",
     "Newjeans我很想妳們",
     "我懷念大麥克套餐99元的年代",
-    "Paul George 2018-19場均28分8.2籃板2.2抄截，MVP排第三DPOY也第三。",
-    "2015-16 Curry的三分進球數402顆，兩分球則是403顆，只差一顆。",
-    "21歲的LeBron James在2005-06場均31.4分7籃板6.6助攻。"
+    "Paul George 2018-19場均28分8.2籃板2.2抄截，MVP排第三DPOY也第三，好強",
+    "2015-16 Curry的三分進球數402顆，兩分球則是403顆，只差一顆，好準",
+    "21歲的LeBron James在2005-06場均31.4分7籃板6.6助攻，這tm21歲?"
 ];
 
 let missingLyricsMessage = "";
